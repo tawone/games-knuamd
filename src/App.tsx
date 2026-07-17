@@ -4,8 +4,9 @@ import WordQuiz from './components/WordQuiz'
 import FillBlank from './components/FillBlank'
 import Talks from './components/Talks'
 import InteractiveNovel from './components/InteractiveNovel'
+import NovelsAdmin from './components/admin/NovelsAdmin'
 
-type Screen = 'menu' | 'fun' | 'match' | 'quiz' | 'fill' | 'talks' | 'novel'
+type Screen = 'menu' | 'fun' | 'match' | 'quiz' | 'fill' | 'talks' | 'novel' | 'admin-novels'
 
 function FunMenu({ onSelect, onBack }: { onSelect: (s: Screen) => void; onBack: () => void }) {
   return (
@@ -74,6 +75,7 @@ export default function App() {
   if (screen === 'fill') return <FillBlank onBack={() => setScreen('fun')} />
   if (screen === 'talks') return <Talks onBack={() => setScreen('menu')} />
   if (screen === 'novel') return <InteractiveNovel onBack={() => setScreen('menu')} />
+  if (screen === 'admin-novels') return <NovelsAdmin onBack={() => setScreen('menu')} />
 
   return (
     <div className="min-h-screen bg-[#FDF6EE]">
@@ -137,6 +139,9 @@ export default function App() {
         <div className="mt-6 pt-4 border-t border-orange-100">
           <p className="text-gray-400 text-xs text-center">8 หมวดหมู่ · 64 คำศัพท์ · 3 เมนูหลัก</p>
           <p className="text-gray-300 text-xs text-center mt-1">games.knuamd.com</p>
+          <button onClick={() => setScreen('admin-novels')} className="mt-3 text-gray-300 hover:text-gray-500 text-[10px] text-center w-full transition-colors">
+            ⚙️ Admin
+          </button>
         </div>
       </div>
     </div>
