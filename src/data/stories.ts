@@ -1,11 +1,3 @@
-export interface StatEffect {
-  hp?: number
-  hunger?: number
-  courage?: number
-  gold?: number
-  exp?: number
-}
-
 export interface VocabularyWord {
   word: string
   ipa?: string
@@ -24,7 +16,31 @@ export interface QuizQuestion {
   options: string[]
   correctIndex: number
   explanation?: string
-  explanationTH?: string
+}
+
+export interface StatEffect {
+  hp?: number
+  hunger?: number
+  courage?: number
+  knowledge?: number
+  speaking?: number
+  gold?: number
+  exp?: number
+}
+
+export interface Character {
+  id: string
+  name: string
+  emoji: string
+  descriptionTH: string
+  baseStats: {
+    hp: number
+    hunger: number
+    courage: number
+    knowledge: number
+    speaking: number
+    gold: number
+  }
 }
 
 export interface StoryChoice {
@@ -32,79 +48,28 @@ export interface StoryChoice {
   textTH: string
   nextScene: string
   vocabulary?: VocabularyWord[]
+  statEffect?: StatEffect
   quiz?: QuizQuestion
   consequence?: string
-  statEffect?: StatEffect
 }
 
-export interface Character {
-  id: string
-  name: string
-  emoji: string
-  description: string
-  descriptionTH: string
-  imageUrl?: string
-  baseStats: {
-    hp: number
-    hunger: number
-    courage: number
-    gold: number
-  }
+export interface StoryGoalStep {
+  sceneId: string
+  labelTH: string
+  labelEN: string
 }
-
-export const characters: Character[] = [
-  {
-    id: 'mage',
-    name: 'Aria',
-    emoji: '🧙‍♀️',
-    description: 'A curious young mage who loves learning',
-    descriptionTH: 'นักเวทย์สาวที่ชอบเรียนรู้',
-    baseStats: { hp: 80, hunger: 70, courage: 95, gold: 15 },
-  },
-  {
-    id: 'knight',
-    name: 'Gareth',
-    emoji: '⚔️',
-    description: 'A brave knight seeking adventure',
-    descriptionTH: 'อั历วินกล้าหาญที่แสวงการผจญภัย',
-    baseStats: { hp: 100, hunger: 80, courage: 80, gold: 10 },
-  },
-  {
-    id: 'healer',
-    name: 'Lily',
-    emoji: '🌿',
-    description: 'A gentle healer with a warm heart',
-    descriptionTH: 'นักบวชสาวใจดี',
-    baseStats: { hp: 90, hunger: 90, courage: 75, gold: 20 },
-  },
-  {
-    id: 'rogue',
-    name: 'Kai',
-    emoji: '🗡️',
-    description: 'A clever rogue who always finds a way',
-    descriptionTH: 'โจรหนุ่มที่ฉลาดหลักแหลม',
-    baseStats: { hp: 75, hunger: 70, courage: 85, gold: 30 },
-  },
-]
 
 export interface StoryScene {
   id: string
-  title?: string
-  content: string
   contentTH: string
-  mood?: 'calm' | 'exciting' | 'mysterious' | 'warm' | 'tense' | 'happy'
+  content: string
   illustration?: string
+  mood?: string
+  title?: string
+  titleTH?: string
   choices?: StoryChoice[]
   isEnding?: boolean
-  endingType?: 'good' | 'bad' | 'neutral'
-}
-
-export interface StoryGoal {
-  title: string
-  titleTH: string
-  icon: string
-  target: number
-  steps: { sceneId: string; label: string; labelTH: string }[]
+  endingType?: 'good' | 'neutral'
 }
 
 export interface Story {
@@ -113,395 +78,639 @@ export interface Story {
   titleTH: string
   emoji: string
   coverGradient: string
-  difficulty: 'beginner' | 'intermediate' | 'advanced'
-  description: string
-  descriptionTH: string
-  estimatedMinutes: number
-  totalScenes: number
-  goal?: StoryGoal
   scenes: { [key: string]: StoryScene }
   startScene: string
+  totalScenes: number
+  description?: string
+  descriptionTH?: string
+  difficulty?: string
+  estimatedMinutes?: number
+  goal?: {
+    title: string
+    titleTH: string
+    icon: string
+    steps: StoryGoalStep[]
+  }
 }
 
-export const difficultyColors: Record<string, string> = {
-  beginner: 'bg-green-100 text-green-700 border-green-200',
-  intermediate: 'bg-amber-100 text-amber-700 border-amber-200',
-  advanced: 'bg-red-100 text-red-700 border-red-200',
+export const moodStyles: { [key: string]: { bg: string; icon: string; label: string } } = {
+  calm: { bg: 'from-blue-500/20 to-cyan-500/20', icon: '😌', label: 'Calm' },
+  cheerful: { bg: 'from-green-500/20 to-emerald-500/20', icon: '😊', label: 'Cheerful' },
+  mysterious: { bg: 'from-purple-500/20 to-violet-500/20', icon: '🔮', label: 'Mysterious' },
+  tense: { bg: 'from-red-500/20 to-orange-500/20', icon: '😰', label: 'Tense' },
+  neutral: { bg: 'from-gray-500/20 to-slate-500/20', icon: '😐', label: 'Neutral' },
 }
 
-export const moodStyles: Record<string, { bg: string; icon: string; label: string }> = {
-  calm: { bg: 'from-blue-400/20 to-cyan-400/20', icon: '🌊', label: 'เงียบสงบ' },
-  exciting: { bg: 'from-orange-400/20 to-red-400/20', icon: '⚡', label: 'ตื่นเต้น' },
-  mysterious: { bg: 'from-purple-400/20 to-indigo-400/20', icon: '🔮', label: 'ลึกลับ' },
-  warm: { bg: 'from-amber-400/20 to-yellow-400/20', icon: '☀️', label: 'อบอุ่น' },
-  tense: { bg: 'from-red-400/20 to-pink-400/20', icon: '😰', label: 'ตึงเครียด' },
-  happy: { bg: 'from-green-400/20 to-emerald-400/20', icon: '🎉', label: 'มีความสุข' },
+export const difficultyColors: { [key: string]: string } = {
+  easy: 'bg-green-500/20 text-green-300',
+  medium: 'bg-yellow-500/20 text-yellow-300',
+  hard: 'bg-red-500/20 text-red-300',
 }
+
+export const characters: Character[] = [
+  {
+    id: 'student',
+    name: 'Alex',
+    emoji: '🧑‍🎓',
+    descriptionTH: 'นักเรียนที่อยากเก่งอังกฤษ',
+    baseStats: { hp: 100, hunger: 80, courage: 70, knowledge: 0, speaking: 0, gold: 10 }
+  },
+  {
+    id: 'tourist',
+    name: 'Max',
+    emoji: '🧑‍💻',
+    descriptionTH: 'นักท่องเที่ยวที่มาเที่ยว',
+    baseStats: { hp: 100, hunger: 85, courage: 80, knowledge: 0, speaking: 0, gold: 50 }
+  },
+  {
+    id: 'chef',
+    name: 'Chef Kim',
+    emoji: '👨‍🍳',
+    descriptionTH: 'เชฟที่มาหาวัตถุดิบ',
+    baseStats: { hp: 100, hunger: 75, courage: 65, knowledge: 0, speaking: 0, gold: 30 }
+  },
+  {
+    id: 'doctor',
+    name: 'Dr. Sam',
+    emoji: '🧑‍⚕️',
+    descriptionTH: 'หมอที่มาพักผ่อน',
+    baseStats: { hp: 100, hunger: 80, courage: 75, knowledge: 0, speaking: 0, gold: 40 }
+  }
+]
 
 export const stories: Story[] = [
   {
-    id: 'cafe-adventure',
-    title: 'The Coffee Shop',
-    titleTH: 'ร้านกาแฟ',
+    id: 'cozy-cafe',
+    title: 'Cozy Cafe',
+    titleTH: 'คาเฟ่อบอุ่น',
     emoji: '☕',
-    coverGradient: 'from-amber-600 via-orange-500 to-yellow-500',
-    difficulty: 'beginner',
-    description: 'A warm story about discovering a new coffee shop',
-    descriptionTH: 'เรื่องอบอุ่นเกี่ยวกับการค้นพบร้านกาแฟใหม่',
-    estimatedMinutes: 3,
-    totalScenes: 8,
+    coverGradient: 'from-amber-900/30 to-orange-900/40',
+    totalScenes: 6,
+    startScene: 'entrance',
     goal: {
-      title: 'Find Your Perfect Drink',
-      titleTH: 'ค้นหาเครื่องดื่มที่สมบูรณ์แบบ',
-      icon: '☕',
-      target: 4,
+      title: 'Language Learner',
+      titleTH: 'นักเรียนภาษา',
+      icon: '📚',
       steps: [
-        { sceneId: 'inside', label: 'Enter the shop', labelTH: 'เข้าร้าน' },
-        { sceneId: 'menu', label: 'Check the menu', labelTH: 'ดูเมนู' },
-        { sceneId: 'recommend', label: 'Ask for recommendation', labelTH: 'ถามแนะนำ' },
-        { sceneId: 'talk', label: 'Chat with barista', labelTH: 'คุยกับพนักงาน' },
-      ],
+        { sceneId: 'order-english', labelTH: 'สั่งเป็นอังกฤษ', labelEN: 'Order in English' },
+        { sceneId: 'talk-english', labelTH: 'พูดคุยเป็นอังกฤษ', labelEN: 'Chat in English' },
+        { sceneId: 'learn-word', labelTH: 'เรียนรู้คำศัพท์ใหม่', labelEN: 'Learn new words' },
+      ]
     },
-    startScene: 'start',
     scenes: {
-      start: {
-        id: 'start',
-        title: 'Chapter 1: A Beautiful Morning',
-        illustration: '🌅',
-        mood: 'warm',
-        content: 'You wake up and feel hungry. You decide to walk to the new coffee shop near your school. The sun is bright and the air is warm. You see a small sign that says "Welcome!"',
-        contentTH: 'คุณตื่นขึ้นมาและรู้สึกหิว คุณตัดสินใจเดินไปที่ร้านกาแฟใหม่ใกล้โรงเรียน แดดจ้าและอากาศอบอุ่น คุณเห็นป้ายเล็กๆ เขียนว่า "ยินดีต้อนรับ!"',
+      entrance: {
+        id: 'entrance',
+        titleTH: 'scene 1',
+        contentTH: 'เดินเข้ามาในร้านคาเฟ่เล็กๆ อบอุ่น มีกลิ่นกาแฟหอมลอยมา\n\nA bell above the door rings as you walk into the cozy cafe.',
+        content: 'You step inside the small, warm cafe. The smell of fresh coffee fills the air. A friendly barista greets you.',
+        illustration: '🚪',
+        mood: 'calm',
         choices: [
-          { text: 'Walk inside the coffee shop', textTH: 'เดินเข้าไปในร้านกาแฟ', nextScene: 'inside', vocabulary: [{ word: 'walk', meaning: 'เดิน' }, { word: 'inside', meaning: 'ข้างใน' }] },
-          { text: 'Look at the menu outside', textTH: 'ดูเมนูข้างนอก', nextScene: 'menu', vocabulary: [{ word: 'menu', meaning: 'เมนู' }, { word: 'outside', meaning: 'ข้างนอก' }] },
-        ],
+          {
+            text: 'Look at the menu board',
+            textTH: 'ดูเมนูบอร์ด',
+            nextScene: 'menu-reading',
+            vocabulary: [
+              { word: 'menu', ipa: '/ˈmɛnjuː/', reading: 'เม-นิว', meaning: 'เมนู', example: 'Can I see the menu?', category: 'noun' },
+              { word: 'board', ipa: '/bɔːrd/', reading: 'บอร์ด', meaning: 'กระดาน', example: 'The menu is on the board.', category: 'noun' },
+            ],
+            statEffect: { knowledge: 3, exp: 3 },
+          },
+          {
+            text: 'Order directly from memory',
+            textTH: 'สั่งตรงๆ จากความจำ',
+            nextScene: 'order-english',
+            vocabulary: [
+              { word: 'order', ipa: '/ˈɔːrdər/', reading: 'ออ-เดอร์', meaning: 'สั่ง', example: 'I would like to order.', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, courage: 3, exp: 5 },
+          }
+        ]
       },
-      menu: {
-        id: 'menu',
-        title: 'The Menu',
+      'menu-reading': {
+        id: 'menu-reading',
+        titleTH: 'scene 2',
+        contentTH: 'คุณเห็นเมนูหลายภาษา มีทั้งภาษาอังกฤษ ภาษาไทย และภาษาญี่ปุ่น\n\nYou see a menu with many languages. English, Thai, and Japanese options are listed.',
+        content: 'The menu has different sections: Coffee, Tea, Desserts. Each item has a description in English.',
         illustration: '📋',
         mood: 'calm',
-        content: 'The menu has many drinks. Coffee 40 baht, Tea 30 baht, Juice 35 baht, Water 15 baht. There\'s also a sign: "Today\'s special: Iced Latte for 50 baht!"',
-        contentTH: 'เมนูมีเครื่องดื่มหลายอย่าง กาแฟ 40 บาท ชา 30 บาท น้ำผลไม้ 35 บาท น้ำ 15 บาท มีป้ายด้วย "พิเศษวันนี้: ไอซ์ลาเต้ 50 บาท!"',
         choices: [
-          { text: 'Go inside and order', textTH: 'เข้าไปสั่งในร้าน', nextScene: 'inside' },
-          { text: 'Check out the desserts', textTH: 'ดูของหวานด้วย', nextScene: 'desserts', vocabulary: [{ word: 'special', meaning: 'พิเศษ' }, { word: 'order', meaning: 'สั่ง' }] },
-        ],
+          {
+            text: 'Try reading the English description aloud',
+            textTH: 'ลองอ่านคำอธิบายภาษาอังกฤษออกเสียง',
+            nextScene: 'talk-english',
+            vocabulary: [
+              { word: 'latte', ipa: '/ˈlɑːteɪ/', reading: 'ลา-เต้', meaning: 'ลาเต้', example: 'I would like a vanilla latte.', category: 'noun' },
+              { word: 'cappuccino', ipa: '/ˌkæpʊˈtʃiːnoʊ/', reading: 'คา-ปุช-ชิ-โน่', meaning: 'คาปุชชิโน่', example: 'A hot cappuccino please.', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, knowledge: 3, exp: 5 },
+          },
+          {
+            text: 'Point at what you want',
+            textTH: 'ชี้สิ่งที่ต้องการ',
+            nextScene: 'order-thai',
+            vocabulary: [
+              { word: 'this', ipa: '/ðɪs/', reading: 'ดิส', meaning: 'นี่', example: 'This one please.', category: 'noun' },
+            ],
+            statEffect: { speaking: 1, exp: 1 },
+          }
+        ]
       },
-      desserts: {
-        id: 'desserts',
-        title: 'Sweet Treats',
-        illustration: '🍰',
-        mood: 'happy',
-        content: 'You see cake, cookies, and croissants. Everything looks delicious! Your wallet has 100 baht.',
-        contentTH: 'คุณเห็นเค้ก คุกกี้ และครัวซองต์ ทุกอย่างน่าอร่อย! กระเป๋าสตางค์มี 100 บาท',
-        choices: [
-          { text: 'Go inside and order food and drink', textTH: 'เข้าไปสั่งอาหารและเครื่องดื่ม', nextScene: 'order-food', vocabulary: [{ word: 'delicious', meaning: 'อร่อย' }, { word: 'wallet', meaning: 'กระเป๋าสตางค์' }] },
-          { text: 'Just get a drink', textTH: 'แค่สั่งเครื่องดื่ม', nextScene: 'inside' },
-        ],
-      },
-      inside: {
-        id: 'inside',
-        title: 'Welcome In',
-        illustration: '✨',
-        mood: 'warm',
-        content: 'Inside the shop, it\'s cool and quiet. Soft music plays. A friendly barista smiles and says, "Hello! What would you like?"',
-        contentTH: 'ในร้านอากาศเย็นและเงียบ มีเพลงเบาๆ พนักงานยิ้มและพูดว่า "สวัสดี! ต้องการอะไร?"',
-        choices: [
-          { text: '"Coffee, please"', textTH: '"กาแฟ ขอบคุณ"', nextScene: 'order-coffee', vocabulary: [{ word: 'friendly', meaning: 'เป็นมิตร' }, { word: 'quiet', meaning: 'เงียบ' }] },
-          { text: '"What do you recommend?"', textTH: '"แนะนำอะไรดี?"', nextScene: 'recommend' },
-        ],
-      },
-      recommend: {
-        id: 'recommend',
-        title: 'A Good Choice',
-        illustration: '👍',
-        mood: 'happy',
-        content: '"I recommend our Thai tea latte! It\'s sweet and creamy — only 45 baht." You try it and it\'s delicious!',
-        contentTH: '"แนะนำลาเต้ชาไทย! หวานและหอมมัน แค่ 45 บาท" คุณลองชิม อร่อยมาก!',
-        choices: [
-          { text: 'Stay and read a book', textTH: 'อยู่อ่านหนังสือ', nextScene: 'ending-peaceful', vocabulary: [{ word: 'recommend', meaning: 'แนะนำ' }, { word: 'creamy', meaning: 'หอมมัน' }] },
-          { text: 'Talk to the barista', textTH: 'คุยกับพนักงาน', nextScene: 'talk' },
-        ],
-      },
-      'order-food': {
-        id: 'order-food',
-        title: 'Order Up!',
-        illustration: '🧋',
-        mood: 'exciting',
-        content: 'You order a latte (50 baht) and a croissant (35 baht). Total: 85 baht. "Great choice! Ready in 3 minutes," the barista says.',
-        contentTH: 'คุณสั่งลาเต้ (50 บาท) และครัวซองต์ (35 บาท) รวม 85 บาท "เลือกดีมาก! เสร็จใน 3 นาที" พนักงานพูด',
-        choices: [
-          { text: 'Wait and look around', textTH: 'รอและดูรอบๆ', nextScene: 'ending-cozy', vocabulary: [{ word: 'total', meaning: 'รวม' }, { word: 'choice', meaning: 'ทางเลือก' }] },
-          { text: 'Check your phone', textTH: 'ดูมือถือ', nextScene: 'phone' },
-        ],
-      },
-      'order-coffee': {
-        id: 'order-coffee',
-        title: 'Your Coffee',
-        illustration: '☕',
-        mood: 'happy',
-        content: 'You order coffee for 40 baht. The barista prepares it quickly. "Here you go! Enjoy!" You take a sip — it tastes delicious!',
-        contentTH: 'คุณสั่งกาแฟ 40 บาท พนักงานเตรียมเร็ว "นี่เลยครับ! ดื่มให้อร่อย!" คุณจิบ — อร่อยมาก!',
-        choices: [
-          { text: 'Read a book by the window', textTH: 'อ่านหนังสือข้างหน้าต่าง', nextScene: 'ending-peaceful', vocabulary: [{ word: 'enjoy', meaning: 'เพลิดเพลิน' }, { word: 'prepare', meaning: 'เตรียม' }] },
-          { text: 'Talk to the barista', textTH: 'คุยกับพนักงาน', nextScene: 'talk' },
-        ],
-      },
-      talk: {
-        id: 'talk',
-        title: 'A Nice Chat',
+      'order-english': {
+        id: 'order-english',
+        titleTH: 'scene 3 - You order!',
+        contentTH: 'คุณพูดเป็นภาษาอังกฤษ: "Hello! Can I have a cappuccino, please?"\n\nThe barista smiles and answers in English: "Sure! What size would you like?"',
+        content: 'You speak English confidently. The barista responds with a friendly question about your preference.',
         illustration: '💬',
-        mood: 'warm',
-        content: '"This is a really nice shop!" you say. "Thank you! I just opened it last week. I love making coffee for people," the barista says proudly.',
-        contentTH: '"ร้านนี้สวยมากเลย!" คุณพูด "ขอบคุณครับ! เพิ่งเปิดได้สัปดาห์เดียว ผมชอบชงกาแฟให้คน" พนักงานภูมิใจ',
+        mood: 'cheerful',
         choices: [
-          { text: '"I\'ll come back again!"', textTH: '"จะกลับมาอีกนะ!"', nextScene: 'ending-support', vocabulary: [{ word: 'proud', meaning: 'ภูมิใจ' }, { word: 'open', meaning: 'เปิด' }] },
-        ],
+          {
+            text: 'Reply: "Medium size, please"',
+            textTH: 'ตอบ: "Size กลาง ครับ/ค่ะ"',
+            nextScene: 'payment',
+            vocabulary: [
+              { word: 'medium', ipa: '/ˈmiːdiəm/', reading: 'มี-เดี่ยม', meaning: 'ขนาดกลาง', example: 'Medium size please.', category: 'noun' },
+              { word: 'size', ipa: '/saɪz/', reading: 'ไซส์', meaning: 'ขนาด', example: 'What size would you like?', category: 'noun' },
+            ],
+            statEffect: { speaking: 8, courage: 5, exp: 8, gold: 3 },
+          },
+          {
+            text: 'Reply: "I don\'t know, what do you recommend?"',
+            textTH: 'ตอบ: "ไม่รู้จะเอาอะไร แนะนำได้ไหม?"',
+            nextScene: 'recommendation',
+            vocabulary: [
+              { word: 'recommend', ipa: '/ˌrɛkəˈmɛnd/', reading: 'เรค-คา-เมนด์', meaning: 'แนะนำ', example: 'What do you recommend?', category: 'noun' },
+              { word: 'recommendation', ipa: '/ˌrɛkəmɛnˈdeɪʃən/', reading: 'เรค-คา-เมน-เด-ชั่น', meaning: 'การแนะนำ', example: 'Your recommendation was great!', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, knowledge: 5, exp: 6 },
+          }
+        ]
       },
-      phone: {
-        id: 'phone',
-        title: 'A Friend!',
-        illustration: '📱',
-        mood: 'exciting',
-        content: 'Your friend texts: "Where are you? I want to come too!" You see them walking toward the shop.',
-        contentTH: 'เพื่อนส่งข้อความมา: "อยู่ไหน? อยากไปด้วย!" คุณเห็นเพื่อนเดินมาที่ร้าน',
+      'order-thai': {
+        id: 'order-thai',
+        titleTH: 'scene 3 - You order in Thai',
+        contentTH: 'คุณชี้แล้วสั่งเป็นภาษาไทย บาริสต้ายิ้มแล้วถามว่าจะเอาไซส์อะไร\n\nYou point and order in Thai. The barista asks about the size.',
+        content: 'You order in Thai. While it works, you miss a chance to practice English.',
+        illustration: '☕',
+        mood: 'neutral',
         choices: [
-          { text: 'Invite them in', textTH: 'ชวนเข้ามา', nextScene: 'ending-friends', vocabulary: [{ word: 'friend', meaning: 'เพื่อน' }, { word: 'text', meaning: 'ส่งข้อความ' }] },
-        ],
+          {
+            text: 'Try again in English: "Medium, please!"',
+            textTH: 'ลองสั่งใหม่เป็นอังกฤษ: "Size กลาง ครับ/ค่ะ"',
+            nextScene: 'payment',
+            vocabulary: [
+              { word: 'try', ipa: '/traɪ/', reading: 'ไทร', meaning: 'ลอง', example: 'Can I try again?', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, courage: 3, exp: 4 },
+          },
+          {
+            text: 'Just continue with Thai',
+            textTH: 'สั่งต่อเป็นภาษาไทย',
+            nextScene: 'payment',
+            statEffect: { exp: 1 },
+          }
+        ]
       },
-      'ending-cozy': {
-        id: 'ending-cozy',
-        illustration: '🌿',
-        mood: 'calm',
+      'recommendation': {
+        id: 'recommendation',
+        titleTH: 'scene 3b - The barista recommends!',
+        contentTH: 'บาริสต้าพูดว่า: "I recommend our Signature Mocha! It\'s made with dark chocolate and fresh milk. Very popular!"\n\nคุณได้เรียนรู้คำศัพท์ใหม่!',
+        content: 'The barista enthusiastically recommends a signature drink, using descriptive English.',
+        illustration: '✨',
+        mood: 'cheerful',
+        choices: [
+          {
+            text: 'Say: "That sounds great! I\'ll take that."',
+            textTH: 'พูดว่า: "ฟังดูดีเลย! เอาอันนั้น"',
+            nextScene: 'payment',
+            vocabulary: [
+              { word: 'signature', ipa: '/ˈsɪɡnətʃər/', reading: 'ซิก-เน-เจอร์', meaning: 'ซิกเนเจอร์', example: 'This is our signature drink.', category: 'noun' },
+              { word: 'popular', ipa: '/ˈpɒpjʊlər/', reading: 'ป็อป-ยูล่า', meaning: 'ยอดนิยม', example: 'It is very popular.', category: 'noun' },
+            ],
+            statEffect: { speaking: 8, knowledge: 5, exp: 8 },
+          },
+          {
+            text: 'Ask: "How much is it?"',
+            textTH: 'ถามว่า: "ราคาเท่าไร?"',
+            nextScene: 'payment',
+            vocabulary: [
+              { word: 'how much', ipa: '/haʊ mʌtʃ/', reading: 'ฮาว มัทช์', meaning: 'ราคาเท่าไร', example: 'How much is this?', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, knowledge: 3, exp: 5 },
+          }
+        ]
+      },
+      payment: {
+        id: 'payment',
+        titleTH: 'scene 4 - Payment!',
+        contentTH: 'คุณจ่ายเงิน 120 บาท บาริสต้าขอบคุณเป็นภาษาอังกฤษ\n\n"Thank you so much! Your English is really good!"',
+        content: 'You pay 120 baht. The barista compliments your English skills!',
+        illustration: '💰',
+        mood: 'cheerful',
+        choices: [
+          {
+            text: 'Say: "Thank you! I\'m learning."',
+            textTH: 'พูดว่า: "ขอบคุณครับ/ค่ะ ผมกำลังเรียนอยู่"',
+            nextScene: 'ending',
+            vocabulary: [
+              { word: 'learning', ipa: '/ˈlɜːrnɪŋ/', reading: 'เลิร์-นิ่ง', meaning: 'กำลังเรียน', example: 'I am learning English.', category: 'noun' },
+            ],
+            statEffect: { speaking: 10, courage: 5, exp: 10, hunger: 15 },
+            quiz: {
+              question: '"I\'m learning" means...',
+              questionTH: '"I\'m learning" หมายความว่า...',
+              options: ['I am studying', 'I am hungry', 'I am tired', 'I am sleeping'],
+              correctIndex: 0,
+              explanation: '"I\'m learning" = ฉันกำลังเรียนรู้',
+            }
+          },
+          {
+            text: 'Just smile and nod',
+            textTH: 'ยิ้มแล้วพยักหน้า',
+            nextScene: 'ending',
+            statEffect: { hunger: 10, exp: 2 },
+          }
+        ]
+      },
+      ending: {
+        id: 'ending',
+        contentTH: 'คุณนั่งจิบกาแฟในคาเฟ่อบอุ่น รู้สึกภูมิใจที่ได้พูดภาษาอังกฤษวันนี้\n\nYou sit in the cozy cafe, proud of yourself for speaking English today!',
+        content: 'You enjoy your coffee, feeling accomplished for practicing English.',
+        illustration: '☕',
+        mood: 'cheerful',
         isEnding: true,
-        endingType: 'good',
-        content: 'You find a cozy seat near the window. Plants hang from the ceiling. Books and board games line the shelves. You feel relaxed and happy. This is a great place! 🌿',
-        contentTH: 'คุณหาที่นั่งสบายๆ ข้างหน้าต่าง ต้นไม้ห้อยจากเพดาน มีหนังสือและเกม คุณรู้สึกผ่อนคลายและมีความสุข 🌿',
-      },
-      'ending-peaceful': {
-        id: 'ending-peaceful',
-        illustration: '📖',
-        mood: 'calm',
-        isEnding: true,
-        endingType: 'neutral',
-        content: 'You sit by the window and read a book. The coffee is warm, the music is relaxing, and a cat curls up at your feet. Sometimes the best moments are the quiet ones. 📖',
-        contentTH: 'คุณนั่งข้างหน้าต่างอ่านหนังสือ กาแฟอุ่น เพลงผ่อนคลาย แมวขดตัวที่เท้า บางครั้งช่วงเวลาที่ดีที่สุดคือช่วงเงียบสงบ 📖',
-      },
-      'ending-friends': {
-        id: 'ending-friends',
-        illustration: '👫',
-        mood: 'happy',
-        isEnding: true,
-        endingType: 'good',
-        content: 'Your friend comes in and orders a drink too. You sit together, chat, laugh, and share stories. The best part of a coffee shop is sharing it with friends! 👫',
-        contentTH: 'เพื่อนเข้ามาและสั่งเครื่องดื่มด้วย คุณนั่งด้วยกัน พูดคุย หัวเราะ แบ่งปันเรื่องราว ส่วนที่ดีที่สุดคือการแบ่งปันกับเพื่อน! 👫',
-      },
-      'ending-support': {
-        id: 'ending-support',
-        illustration: '💛',
-        mood: 'warm',
-        isEnding: true,
-        endingType: 'good',
-        content: '"I\'ll tell my friends about this place!" The barista\'s eyes light up. "That means so much. Thank you for supporting my dream!" You feel warm inside. 💛',
-        contentTH: '"จะบอกเพื่อนๆ เรื่องที่นี่!" พนักงานตาเป็นประกาย "ขอบคุณมาก ขอบคุณที่สนับสนุนความฝันของผม!" คุณรู้สึกอบอุ่นภายใน 💛',
-      },
-    },
+        endingType: 'good'
+      }
+    }
   },
   {
-    id: 'temple-mystery',
-    title: 'The Temple Mystery',
-    titleTH: 'ปริศนาวัด',
-    emoji: '🛕',
-    coverGradient: 'from-amber-700 via-red-600 to-purple-700',
-    difficulty: 'intermediate',
-    description: 'Explore a mysterious old temple',
-    descriptionTH: 'สำรวจวัดเก่าลึกลับ',
-    estimatedMinutes: 4,
-    totalScenes: 8,
+    id: 'lost-temple',
+    title: 'The Lost Temple',
+    titleTH: 'วัดลึกลับ',
+    emoji: '🏛️',
+    coverGradient: 'from-emerald-900/30 to-teal-900/40',
+    totalScenes: 7,
+    startScene: 'temple-entrance',
     goal: {
-      title: 'Solve the Temple Mystery',
-      titleTH: 'แก้ปริศนาวัดลึกลับ',
-      icon: '🗝️',
-      target: 3,
+      title: 'Treasure Hunter',
+      titleTH: 'นักล่าสมบัติ',
+      icon: '💎',
       steps: [
-        { sceneId: 'main-hall', label: 'Enter the temple', labelTH: 'เข้าวัด' },
-        { sceneId: 'paintings', label: 'Find the riddle', labelTH: 'หาปริศนา' },
-        { sceneId: 'secret-room', label: 'Open the secret room', labelTH: 'เปิดห้องลับ' },
-      ],
+        { sceneId: 'secret-room', labelTH: 'พบห้องลับ', labelEN: 'Find secret room' },
+        { sceneId: 'solve-puzzle', labelTH: 'แก้ปริศนา', labelEN: 'Solve puzzle' },
+        { sceneId: 'ending-treasure', labelTH: 'ได้สมบัติ', labelEN: 'Get treasure' },
+      ]
     },
-    startScene: 'start',
     scenes: {
-      start: {
-        id: 'start',
-        title: 'The Assignment',
-        illustration: '📋',
-        mood: 'mysterious',
-        content: 'Your teacher gives you a mission: visit the old temple and find a hidden message. The temple is 200 years old. You arrive at the gate. It\'s dark and quiet.',
-        contentTH: 'ครูมอบภารกิจ: ไปที่วัดเก่าและหาข้อความที่ซ่อนอยู่ วัดมีอายุ 200 ปี คุณมาถึงประตู มืดและเงียบ',
+      'temple-entrance': {
+        id: 'temple-entrance',
+        titleTH: 'scene 1',
+        contentTH: 'คุณยืนอยู่หน้าทางเข้าวัดโบราณ มีแสงลอดผ่านซุ้มประตู\n\nBefore you stands an ancient temple. Light streams through the stone archway.',
+        content: 'You stand before an ancient temple entrance. Mysterious light filters through the stone archway.',
+        illustration: '🏛️',
+        mood: 'calm',
         choices: [
-          { text: 'Enter through the main gate', textTH: 'เข้าประตูหลัก', nextScene: 'main-hall', vocabulary: [{ word: 'mission', meaning: 'ภารกิจ' }, { word: 'hidden', meaning: 'ซ่อน' }] },
-          { text: 'Walk around and look for another way', textTH: 'เดินอ้อมหาทางอื่น', nextScene: 'side-path', vocabulary: [{ word: 'gate', meaning: 'ประตู' }, { word: 'dark', meaning: 'มืด' }] },
-        ],
+          {
+            text: 'Enter through the main hall',
+            textTH: 'เดินเข้าห้องโถงหลัก',
+            nextScene: 'main-hall',
+            vocabulary: [
+              { word: 'ancient', ipa: '/ˈeɪnʃənt/', reading: 'เอ็น-เชี่ยนท์', meaning: 'โบราณ', example: 'This is an ancient temple.', category: 'noun' },
+              { word: 'hall', ipa: '/hɔːl/', reading: 'ฮอล', meaning: 'ห้องโถง', example: 'The main hall is very big.', category: 'noun' },
+            ],
+            statEffect: { courage: 5, knowledge: 5, exp: 5 },
+          },
+          {
+            text: 'Take the hidden side path',
+            textTH: 'เดินทางลัด',
+            nextScene: 'side-path',
+            vocabulary: [
+              { word: 'hidden', ipa: '/ˈhɪdən/', reading: 'ฮิด-เด่น', meaning: 'ซ่อน', example: 'There is a hidden door.', category: 'noun' },
+              { word: 'path', ipa: '/pæθ/', reading: 'พะท', meaning: 'ทาง', example: 'Follow this path.', category: 'noun' },
+            ],
+            statEffect: { courage: 3, exp: 3 },
+          }
+        ]
       },
       'main-hall': {
         id: 'main-hall',
-        title: 'The Main Hall',
-        illustration: '🏛️',
+        titleTH: 'scene 2',
+        contentTH: 'ห้องโถงใหญ่มีภาพจิตรกรรมบนผนัง และประตู 3 บาน\n\nThe great hall has murals on the walls and three doors.',
+        content: 'The grand hall features ancient murals and three mysterious doors ahead.',
+        illustration: '✨',
         mood: 'mysterious',
-        content: 'The main hall has old paintings on the walls. In the center, there\'s a golden Buddha statue. You notice a small door behind it with three locks.',
-        contentTH: 'ห้องโถงใหญ่มีภาพวาดเก่าบนผนัง ตรงกลางมีพระพุทธรูปสีทอง คุณเห็นประตูเล็กๆ หลังองค์พระมีล็อคสามตัว',
         choices: [
-          { text: 'Open the small door', textTH: 'เปิดประตูเล็ก', nextScene: 'secret-room', vocabulary: [{ word: 'golden', meaning: 'สีทอง' }, { word: 'lock', meaning: 'ล็อค' }] },
-          { text: 'Study the paintings first', textTH: 'ดูภาพวาดก่อน', nextScene: 'paintings' },
-        ],
+          {
+            text: 'Study the murals for clues',
+            textTH: 'ศึกษาภาพจิตรกรรมหาเบาะแส',
+            nextScene: 'paintings',
+            vocabulary: [
+              { word: 'mural', ipa: '/ˈmjʊrəl/', reading: 'มュ-เริล', meaning: 'ภาพจิตรกรรมฝาผนัง', example: 'The murals tell a story.', category: 'noun' },
+              { word: 'clue', ipa: '/kluː/', reading: 'คลู', meaning: 'เบาะแส', example: 'Look for clues.', category: 'noun' },
+            ],
+            statEffect: { knowledge: 8, exp: 8 },
+          },
+          {
+            text: 'Open the golden door',
+            textTH: 'เปิดประตูสีทอง',
+            nextScene: 'secret-room',
+            vocabulary: [
+              { word: 'golden', ipa: '/ˈɡoʊldən/', reading: 'โกล-เด่น', meaning: 'สีทอง', example: 'The door is golden.', category: 'noun' },
+            ],
+            statEffect: { courage: 5, exp: 5 },
+            quiz: {
+              question: '"Golden" means...',
+              questionTH: '"Golden" หมายความว่า...',
+              options: ['Color of gold', 'Made of gold', 'Very expensive', 'Shiny'],
+              correctIndex: 1,
+              explanation: '"Golden" = ทำจากทอง (made of gold)',
+            }
+          }
+        ]
       },
       'side-path': {
         id: 'side-path',
-        title: 'The Secret Garden',
-        illustration: '🌿',
+        titleTH: 'scene 2b',
+        contentTH: 'ทางลัดผ่านป่า คุณเจอรูปปั้นหินหน้าประตูลับ\n\nThe shortcut leads through a forest. You find a stone statue near a hidden door.',
+        content: 'A forest path leads to a hidden doorway guarded by stone statues.',
+        illustration: '🌳',
         mood: 'mysterious',
-        content: 'Behind the temple, you find a garden with old trees. There\'s a small well. Something shiny catches your eye in the water — a bronze key!',
-        contentTH: 'หลังวัดมีสวนต้นไม้เก่า มีบ่อเล็กๆ แสงประกายดึงดูดสายตาในน้ำ — กุญแจทองแดง!',
         choices: [
-          { text: 'Grab the key', textTH: 'หยิบกุญแจ', nextScene: 'main-hall', vocabulary: [{ word: 'shiny', meaning: 'เป็นประกาย' }, { word: 'garden', meaning: 'สวน' }] },
-          { text: 'Look for more clues', textTH: 'หาเบาะแสเพิ่ม', nextScene: 'paintings' },
-        ],
+          {
+            text: 'Read the inscription on the statue',
+            textTH: 'อ่านจารึกบนรูปปั้น',
+            nextScene: 'paintings',
+            vocabulary: [
+              { word: 'statue', ipa: '/ˈstætʃuː/', reading: 'สแต-ชิว', meaning: 'รูปปั้น', example: 'There is a stone statue.', category: 'noun' },
+              { word: 'inscription', ipa: '/ɪnˈskrɪpʃən/', reading: 'อิน-สคริพ-ชั่น', meaning: 'จารึก', example: 'Read the inscription.', category: 'noun' },
+            ],
+            statEffect: { knowledge: 5, courage: 3, exp: 5 },
+          },
+          {
+            text: 'Enter through the hidden door',
+            textTH: 'เดินเข้าประตูลับ',
+            nextScene: 'secret-room',
+            vocabulary: [
+              { word: 'door', ipa: '/dɔːr/', reading: 'ดอร์', meaning: 'ประตู', example: 'Open the door.', category: 'noun' },
+            ],
+            statEffect: { courage: 5, exp: 3 },
+          }
+        ]
       },
       paintings: {
         id: 'paintings',
-        title: 'The Clues',
+        titleTH: 'scene 3',
+        contentTH: 'ภาพจิตรกรรมแสดงแผนที่ขุมทรัพย์ มีเบาะแสว่าต้องแก้ปริศนา\n\nThe murals show a treasure map. You need to solve a puzzle to find it.',
+        content: 'The ancient murals reveal a treasure map. A riddle must be solved.',
         illustration: '🎨',
         mood: 'mysterious',
-        content: 'The paintings tell a story. You find a riddle carved in stone: "I have hands but cannot clap. I have a face but cannot smile. What am I?" A clock! Behind it: the number "3-1-5".',
-        contentTH: 'ภาพวาดเล่าเรื่อง คุณเจอปริศนาสลักบนหิน: "ข้ามีมือแต่ตบไม่ได้ ข้ามีหน้าแต่ยิ้มไม่ได้ ข้าคืออะไร?" นาฬิกา! หลังมันมีตัวเลข "3-1-5"',
         choices: [
-          { text: 'Go to the small door with the code', textTH: 'ไปประตูเล็กพร้อมรหัส', nextScene: 'secret-room', vocabulary: [{ word: 'riddle', meaning: 'ปริศนา' }, { word: 'code', meaning: 'รหัส' }] },
-        ],
+          {
+            text: 'Solve the riddle: "What has keys but no locks?"',
+            textTH: 'แก้ปริศนา: "อะไรที่มีคีย์แต่ไม่มีล็อค?"',
+            nextScene: 'solve-puzzle',
+            vocabulary: [
+              { word: 'riddle', ipa: '/ˈrɪdəl/', reading: 'ริด-เดิล', meaning: 'ปริศนา', example: 'Can you solve this riddle?', category: 'noun' },
+              { word: 'puzzle', ipa: '/ˈpʌzəl/', reading: 'พัซ-เซิล', meaning: 'ปริศนา/เกม', example: 'This is a difficult puzzle.', category: 'noun' },
+            ],
+            statEffect: { knowledge: 10, exp: 10 },
+            quiz: {
+              question: '"What has keys but no locks?" Answer: A piano',
+              questionTH: 'คำตอบคือ: เปียโน (Piano) เพราะมีคีย์บอร์ดแต่ไม่มีล็อค',
+              options: ['Computer', 'Piano', 'House', 'Car'],
+              correctIndex: 1,
+              explanation: 'A piano has keys (แป้นพิมพ์) but no locks (ล็อค)!',
+            }
+          },
+          {
+            text: 'Search the room physically',
+            textTH: 'ค้นหาห้องด้วยตัวเอง',
+            nextScene: 'explore',
+            vocabulary: [
+              { word: 'search', ipa: '/sɜːrtʃ/', reading: 'เซิร์ช', meaning: 'ค้นหา', example: 'Search the room.', category: 'noun' },
+            ],
+            statEffect: { courage: 3, exp: 3 },
+          }
+        ]
       },
-      'secret-room': {
-        id: 'secret-room',
-        title: 'Three Locks',
-        illustration: '🔒',
-        mood: 'tense',
-        content: 'Behind the statue, a small room with old books. Three number locks on the wall. You find a note: "Numbers: 3-1-5, Word: PEACE, Symbol: ◆"',
-        contentTH: 'หลังองค์พระมีห้องเล็กๆ มีหนังสือเก่า ล็อคตัวเลขสามตัวบนผนัง คุณเจอโน้ต: "ตัวเลข: 3-1-5, คำ: PEACE, สัญลักษณ์: ◆"',
+      'solve-puzzle': {
+        id: 'solve-puzzle',
+        titleTH: 'scene 4',
+        contentTH: 'คุณตอบว่า "A Piano!" ผนังเปิดออกเผยให้เห็นห้องสมบัติ!\n\n"Correct!" The wall opens, revealing the treasure room!',
+        content: 'Your answer is correct! The wall slides open, revealing a room full of treasures.',
+        illustration: '🔷',
+        mood: 'cheerful',
         choices: [
-          { text: 'Open the locks!', textTH: 'ไขล็อค!', nextScene: 'ending-treasure', vocabulary: [{ word: 'lock', meaning: 'ล็อค' }, { word: 'symbol', meaning: 'สัญลักษณ์' }] },
-        ],
-      },
-      'ending-treasure': {
-        id: 'ending-treasure',
-        illustration: '📖',
-        mood: 'happy',
-        isEnding: true,
-        endingType: 'good',
-        content: 'Click! The locks open. Inside is... not gold, but ancient Buddhist scriptures written in gold ink. "These are priceless!" You photograph everything. Your teacher gives you an A+! The real treasure is the adventure itself. 📖✨',
-        contentTH: 'คลิก! ล็อคเปิด ข้างในไม่ใช่ทอง แต่เป็นคัมภีร์โบราณเขียนด้วยหมึกทอง "ล้ำค่ามาก!" คุณถ่ายรูปทุกอย่าง ครูให้ A+! ขุมทรัพย์ที่แท้จริงคือการผจญภัย 📖✨',
-      },
-    },
-  },
-  {
-    id: 'market-day',
-    title: 'Market Day Adventure',
-    titleTH: 'วันตลาดนัด',
-    emoji: '🏪',
-    coverGradient: 'from-green-600 via-emerald-500 to-teal-500',
-    difficulty: 'beginner',
-    description: 'A fun day at the Thai market',
-    descriptionTH: 'วันสนุกที่ตลาดนัดไทย',
-    estimatedMinutes: 3,
-    totalScenes: 8,
-    goal: {
-      title: 'Buy Dinner Under Budget',
-      titleTH: 'ซื้ออาหารมื้อค่ำภายในงบ',
-      icon: '🛒',
-      target: 3,
-      steps: [
-        { sceneId: 'explore', label: 'Explore market', labelTH: 'สำรวจตลาด' },
-        { sceneId: 'food-area', label: 'Find food', labelTH: 'หาอาหาร' },
-        { sceneId: 'good-deal', label: 'Get a good deal', labelTH: 'ได้ราคาดี' },
-      ],
-    },
-    startScene: 'start',
-    scenes: {
-      start: {
-        id: 'start',
-        title: 'Mission: Dinner Shopping',
-        illustration: '🛒',
-        mood: 'exciting',
-        content: 'Saturday morning! Mom gives you 200 baht. "Buy food for family dinner — 6 people tonight!" You feel excited and nervous.',
-        contentTH: 'เช้าวันเสาร์! แม่ให้ 200 บาท "ซื้ออาหารมื้อค่ำ — 6 คนคืนนี้!" คุณตื่นเต้นและกังวลเล็กน้อย',
-        choices: [
-          { text: 'Go to the food section', textTH: 'ไปโซนอาหาร', nextScene: 'food-area', vocabulary: [{ word: 'excited', meaning: 'ตื่นเต้น' }, { word: 'nervous', meaning: 'กังวล' }] },
-          { text: 'Explore the whole market first', textTH: 'สำรวจตลาดทั้งหมดก่อน', nextScene: 'explore' },
-        ],
+          {
+            text: 'Carefully examine the treasures',
+            textTH: 'ค่อยๆ ดูสมบัติอย่างถี่ถ้วน',
+            nextScene: 'ending-treasure',
+            vocabulary: [
+              { word: 'treasure', ipa: '/ˈtrɛʒər/', reading: 'เทร-เชอร์', meaning: 'สมบัติ', example: 'The treasure is beautiful.', category: 'noun' },
+              { word: 'carefully', ipa: '/ˈkɛrfəli/', reading: 'แคร์-ฟูล-ลี่', meaning: 'อย่างระมัดระวัง', example: 'Look carefully.', category: 'noun' },
+            ],
+            statEffect: { knowledge: 10, exp: 15 },
+          },
+          {
+            text: 'Grab everything quickly!',
+            textTH: 'คว้าทุกอย่างเร็วๆ!',
+            nextScene: 'ending-treasure',
+            statEffect: { gold: 20, exp: 5, courage: -5 },
+          }
+        ]
       },
       explore: {
         id: 'explore',
-        title: 'Colorful Market',
-        illustration: '🌈',
-        mood: 'happy',
-        content: 'The market is busy! Clothes, toys, and food smells everywhere. You stop at a fruit seller with the biggest mangoes — 30 baht per kilo.',
-        contentTH: 'ตลาดคึกคัก! เสื้อผ้า ของเล่น กลิ่นอาหารทุกที่ คุณหยุดที่ร้านผลไม้มะม่วงใหญ่ — 30 บาทต่อกิโล',
+        titleTH: 'scene 4b',
+        contentTH: 'คุณค้นหาทั่วห้องและเจอสวิตซ์ลับบนผนัง\n\nYou search the room and find a hidden switch on the wall.',
+        content: 'Searching the room reveals a hidden switch on the wall.',
+        illustration: '🔎',
+        mood: 'calm',
         choices: [
-          { text: 'Buy 1kg mangoes (30 THB)', textTH: 'ซื้อมะม่วง 1 กก. (30 บาท)', nextScene: 'food-area', vocabulary: [{ word: 'mango', meaning: 'มะม่วง' }, { word: 'fresh', meaning: 'สด' }] },
-          { text: 'Skip to the food section', textTH: 'ข้ามไปโซนอาหาร', nextScene: 'food-area' },
-        ],
+          {
+            text: 'Press the switch',
+            textTH: 'กดสวิตซ์',
+            nextScene: 'ending-treasure',
+            vocabulary: [
+              { word: 'switch', ipa: '/swɪtʃ/', reading: 'สวิทช์', meaning: 'สวิตซ์', example: 'Press the switch.', category: 'noun' },
+            ],
+            statEffect: { courage: 5, gold: 10, exp: 8 },
+          }
+        ]
       },
-      'food-area': {
-        id: 'food-area',
-        title: 'Food Heaven',
-        illustration: '🍗',
-        mood: 'exciting',
-        content: 'Grilled chicken 80 THB, som tam 35 THB, sticky rice 10 THB, crab som tam 50 THB. Everything smells amazing! Budget: 170 THB.',
-        contentTH: 'ไก่ย่าง 80 บาท ส้มตำ 35 บาท ข้าวเหนียว 10 บาท ส้มตำปู 50 บาท ทุกอย่างกลิ่นหอม! งบ: 170 บาท',
+      'ending-treasure': {
+        id: 'ending-treasure',
+        contentTH: 'คุณพบหีบสมบัติโบราณ เปิดออกมาเจอทองคำและอัญมณี!\n\nYou found an ancient chest! Inside are gold and jewels!',
+        content: 'You discovered an ancient treasure chest filled with gold and precious stones!',
+        illustration: '💎',
+        mood: 'cheerful',
+        isEnding: true,
+        endingType: 'good'
+      }
+    }
+  },
+  {
+    id: 'street-food',
+    title: 'Street Food Adventure',
+    titleTH: 'ผจญภัยอาหารริมทาง',
+    emoji: '🍜',
+    coverGradient: 'from-red-900/30 to-orange-900/40',
+    totalScenes: 6,
+    startScene: 'street-entrance',
+    goal: {
+      title: 'Food Explorer',
+      titleTH: 'นักสำรวจอาหาร',
+      icon: '🍽️',
+      steps: [
+        { sceneId: 'ask-vendor', labelTH: 'ถามแม่ค้า', labelEN: 'Ask the vendor' },
+        { sceneId: 'food-area', labelTH: 'กินอาหาร', labelEN: 'Eat the food' },
+        { sceneId: 'ending-perfect', labelTH: 'มีความสุข', labelEN: 'Happy ending' },
+      ]
+    },
+    scenes: {
+      'street-entrance': {
+        id: 'street-entrance',
+        titleTH: 'scene 1',
+        contentTH: 'คุณเดินเข้าตลาดนัด มีอาหารหลายร้าน กลิ่นหอมลอยมา\n\nYou enter a night market. Various food stalls fill the air with delicious aromas.',
+        content: 'Welcome to the night market! Street food vendors line both sides of the street.',
+        illustration: '🛒',
+        mood: 'calm',
         choices: [
-          { text: 'Buy chicken + rice + som tam (125 THB)', textTH: 'ซื้อไก่ + ข้าว + ส้มตำ (125 บาท)', nextScene: 'good-deal', vocabulary: [{ word: 'budget', meaning: 'งบ' }, { word: 'delicious', meaning: 'อร่อย' }] },
-          { text: 'Ask vendor for advice', textTH: 'ถามแม่ค้า', nextScene: 'ask-vendor' },
-        ],
-      },
-      'good-deal': {
-        id: 'good-deal',
-        title: 'Smart Shopping',
-        illustration: '💡',
-        mood: 'happy',
-        content: 'You still have 45 baht left! You see a coconut stand — cold coconut water for 25 THB.',
-        contentTH: 'ยังเหลือ 45 บาท! เห็นร้านน้ำมะพร้าว — 25 บาท',
-        choices: [
-          { text: 'Buy coconut water (25 THB)', textTH: 'ซื้อน้ำมะพร้าว (25 บาท)', nextScene: 'ending-perfect' },
-          { text: 'Save the money for mom', textTH: 'เก็บเงินให้แม่', nextScene: 'ending-save', vocabulary: [{ word: 'coconut', meaning: 'มะพร้าว' }, { word: 'save', meaning: 'เก็บออม' }] },
-        ],
+          {
+            text: 'Ask a vendor about their food in English',
+            textTH: 'ถามแม่ค้าเป็นภาษาอังกฤษ',
+            nextScene: 'ask-vendor',
+            vocabulary: [
+              { word: 'vendor', ipa: '/ˈvɛndər/', reading: 'เวน-เดอร์', meaning: 'แม่ค้า', example: 'The vendor sells pad thai.', category: 'noun' },
+              { word: 'stall', ipa: '/stɔːl/', reading: 'สตอล', meaning: 'ร้าน', example: 'This stall has good food.', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, courage: 5, exp: 5 },
+          },
+          {
+            text: 'Point at food and smile',
+            textTH: 'ชี้อาหารแล้วยิ้ม',
+            nextScene: 'food-order',
+            statEffect: { hunger: 5, exp: 1 },
+          }
+        ]
       },
       'ask-vendor': {
         id: 'ask-vendor',
-        title: 'Expert Advice',
-        illustration: '💬',
-        mood: 'warm',
-        content: '"Buy grilled chicken — 80 baht whole. Sticky rice — 20 baht for two bags. Som tam — 35 baht. Only 135 baht total!" The vendor winks. "Buy coconut ice cream with the rest!"',
-        contentTH: '"ซื้อไก่ย่าง — 80 บาททั้งตัว ข้าวเหนียว — 20 บาทสองถุง ส้มตำ — 35 บาท แค่ 135 บาท!" แม่ค้าขยิบตา "ซื้อไอศกรีมมะพร้าวด้วยนะ!"',
+        titleTH: 'scene 2',
+        contentTH: 'คุณถามว่า: "What is this?" แม่ค้าตอบว่า: "It\'s Tom Yum! Very spicy and delicious!"\n\nYou ask the vendor and learn about the food!',
+        content: 'The vendor explains their special Tom Yum with pride!',
+        illustration: '🍜',
+        mood: 'cheerful',
         choices: [
-          { text: 'Follow her advice!', textTH: 'ทำตามเลย!', nextScene: 'ending-perfect', vocabulary: [{ word: 'advice', meaning: 'คำแนะนำ' }, { word: 'total', meaning: 'รวม' }] },
-        ],
+          {
+            text: 'Order: "One bowl, please!"',
+            textTH: 'สั่ง: "ชามหนึ่ง ครับ/ค่ะ"',
+            nextScene: 'food-eating',
+            vocabulary: [
+              { word: 'bowl', ipa: '/boʊl/', reading: 'โบล', meaning: 'ชาม', example: 'One bowl of Tom Yum.', category: 'noun' },
+              { word: 'spicy', ipa: '/ˈspaɪsi/', reading: 'สไป-ซี่', meaning: 'เผ็ด', example: 'Is it spicy?', category: 'noun' },
+            ],
+            statEffect: { speaking: 8, hunger: 10, exp: 8, gold: -10 },
+          },
+          {
+            text: 'Ask: "How spicy is it?"',
+            textTH: 'ถามว่า: "เผ็ดแค่ไหน?"',
+            nextScene: 'food-eating',
+            vocabulary: [
+              { word: 'how', ipa: '/haʊ/', reading: 'ฮาว', meaning: 'อย่างไร', example: 'How spicy?', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, knowledge: 3, exp: 5 },
+          }
+        ]
+      },
+      'food-order': {
+        id: 'food-order',
+        titleTH: 'scene 2b',
+        contentTH: 'คุณชี้อาหาร แต่แม่ค้าพูดอังกฤษว่า: "Would you like this one?"\n\nThe vendor speaks to you in English!',
+        content: 'The vendor tries to communicate in English, giving you a chance to practice!',
+        illustration: '🤔',
+        mood: 'calm',
+        choices: [
+          {
+            text: 'Try: "Yes, please!"',
+            textTH: 'ลองพูด: "ใช่ ครับ/ค่ะ"',
+            nextScene: 'food-eating',
+            vocabulary: [
+              { word: 'please', ipa: '/pliːz/', reading: 'พลีส', meaning: 'กรุณา', example: 'Yes, please.', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, courage: 3, hunger: 8, exp: 5, gold: -8 },
+          },
+          {
+            text: 'Just point and smile',
+            textTH: 'ชี้แล้วยิ้ม',
+            nextScene: 'food-eating',
+            statEffect: { hunger: 5, exp: 1, gold: -5 },
+          }
+        ]
+      },
+      'food-eating': {
+        id: 'food-eating',
+        titleTH: 'scene 3',
+        contentTH: 'คุณนั่งกินอาหารริมทาง อร่อยมาก! มีเสียงดนตรีจากนักดนตรีข้างทาง\n\nYou enjoy delicious street food. A musician plays nearby!',
+        content: 'Sitting by the street, you enjoy your meal. Music fills the air.',
+        illustration: '🎵',
+        mood: 'cheerful',
+        choices: [
+          {
+            text: 'Thank the vendor: "Delicious! Thank you!"',
+            textTH: 'ขอบคุณแม่ค้า: "อร่อย! ขอบคุณครับ/ค่ะ"',
+            nextScene: 'food-area',
+            vocabulary: [
+              { word: 'delicious', ipa: '/dɪˈlɪʃəs/', reading: 'ดิ-ลิ-เชิส', meaning: 'อร่อย', example: 'The food is delicious!', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, hunger: 15, exp: 8 },
+          },
+          {
+            text: 'Just eat and enjoy',
+            textTH: 'แค่กินแล้วEnjoy',
+            nextScene: 'food-area',
+            statEffect: { hunger: 15, exp: 3 },
+          }
+        ]
+      },
+      'food-area': {
+        id: 'food-area',
+        titleTH: 'scene 4',
+        contentTH: 'คุณเดินต่อในตลาด เจอร้านขนมไทย\n\nYou continue walking and find a Thai dessert stall.',
+        content: 'Further down the market, you discover a traditional Thai dessert stall.',
+        illustration: '🌈',
+        mood: 'calm',
+        choices: [
+          {
+            text: 'Ask: "What Thai desserts do you have?"',
+            textTH: 'ถามว่า: "มีขนมไทยอะไรบ้าง?"',
+            nextScene: 'ending-perfect',
+            vocabulary: [
+              { word: 'dessert', ipa: '/dɪˈzɜːrt/', reading: 'ดิ-เซิร์ต', meaning: 'ขนมหวาน', example: 'Thai desserts are sweet.', category: 'noun' },
+              { word: 'traditional', ipa: '/trəˈdɪʃənəl/', reading: 'ทรา-ดิ-ชั่น-นอล', meaning: 'ดั้งเดิม', example: 'This is traditional Thai food.', category: 'noun' },
+            ],
+            statEffect: { speaking: 5, knowledge: 5, hunger: 10, exp: 8 },
+          },
+          {
+            text: 'Buy something sweet',
+            textTH: 'ซื้อของหวาน',
+            nextScene: 'ending-perfect',
+            vocabulary: [
+              { word: 'sweet', ipa: '/swiːt/', reading: 'สวีท', meaning: 'หวาน', example: 'Thai desserts are very sweet.', category: 'noun' },
+            ],
+            statEffect: { hunger: 10, exp: 3, gold: -5 },
+          }
+        ]
       },
       'ending-perfect': {
         id: 'ending-perfect',
+        contentTH: 'คุณมีความสุขกับอาหาร STREET FOOD และได้ฝึกภาษาอังกฤษ!\n\nWhat a great day! Good food and English practice!',
+        content: 'A perfect evening of street food and English conversation!',
         illustration: '🎉',
-        mood: 'happy',
+        mood: 'cheerful',
         isEnding: true,
-        endingType: 'good',
-        content: 'You arrive home with bags of food. Everyone is impressed! "How much did you spend?" "Only 135 baht!" Mom hugs you tight. "You\'re so smart!" Best Saturday ever! 🎉',
-        contentTH: 'คุณกลับบ้านพร้อมถุงอาหาร ทุกคนประทับใจ! "หมดไปเท่าไหร่?" "แค่ 135 บาท!" แม่กอดแน่น "ลูกเก่งมาก!" เสาร์ที่ดีที่สุด! 🎉',
-      },
-      'ending-save': {
-        id: 'ending-save',
-        illustration: '💰',
-        mood: 'warm',
-        isEnding: true,
-        endingType: 'good',
-        content: 'You hand mom the remaining 45 baht. "You saved this?" She hugs you. Dinner is delicious. Later, mom gives you 50 baht back as a reward. Being responsible feels great! 💰',
-        contentTH: 'คุณยื่นเงินเหลือ 45 บาทให้แม่ "เก็บไว้เหรอ?" เธอกอดคุณ มื้อค่ำอร่อย แม่คืนเงิน 50 บาทเป็นรางวัล การมีความรับผิดชอบรู้สึกดีมาก! 💰',
-      },
-    },
-  },
+        endingType: 'good'
+      }
+    }
+  }
 ]

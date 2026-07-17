@@ -306,8 +306,8 @@ export default function NovelsAdmin({ onBack }: Props) {
             <InputField label="ชื่อเรื่อง (EN)" value={editStory.title} onChange={v => setEditStory({ ...editStory, title: v })} />
             <InputField label="ชื่อเรื่อง (TH)" value={editStory.titleTH} onChange={v => setEditStory({ ...editStory, titleTH: v })} />
             <InputField label="Emoji" value={editStory.emoji} onChange={v => setEditStory({ ...editStory, emoji: v })} />
-            <InputField label="คำอธิบาย (EN)" value={editStory.description} onChange={v => setEditStory({ ...editStory, description: v })} />
-            <InputField label="คำอธิบาย (TH)" value={editStory.descriptionTH} onChange={v => setEditStory({ ...editStory, descriptionTH: v })} />
+            <InputField label="คำอธิบาย (EN)" value={editStory.description || ''} onChange={v => setEditStory({ ...editStory, description: v })} />
+            <InputField label="คำอธิบาย (TH)" value={editStory.descriptionTH || ''} onChange={v => setEditStory({ ...editStory, descriptionTH: v })} />
 
             <div className="grid grid-cols-2 gap-3">
               <div>

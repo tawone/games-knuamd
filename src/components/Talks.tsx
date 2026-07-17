@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { stories, type Story, type StoryChoice, moodStyles } from '@/data/stories'
+import { stories, moodStyles, type Story, type StoryChoice } from '@/data/stories'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, BookOpen, RotateCcw, Star, ChevronRight, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { difficultyColors } from '@/data/stories'
 
 interface Props { onBack: () => void }
 
