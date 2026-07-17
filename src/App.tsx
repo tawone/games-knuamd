@@ -2,8 +2,9 @@ import { useState } from 'react'
 import WordMatch from './components/WordMatch'
 import WordQuiz from './components/WordQuiz'
 import FillBlank from './components/FillBlank'
+import InteractiveNovel from './components/InteractiveNovel'
 
-type Screen = 'menu' | 'match' | 'quiz' | 'fill'
+type Screen = 'menu' | 'match' | 'quiz' | 'fill' | 'novel'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('menu')
@@ -11,6 +12,7 @@ export default function App() {
   if (screen === 'match') return <WordMatch onBack={() => setScreen('menu')} />
   if (screen === 'quiz') return <WordQuiz onBack={() => setScreen('menu')} />
   if (screen === 'fill') return <FillBlank onBack={() => setScreen('menu')} />
+  if (screen === 'novel') return <InteractiveNovel onBack={() => setScreen('menu')} />
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1B3A5C] via-[#234B6E] to-[#2E8B8B] flex flex-col items-center justify-center p-4">
@@ -63,6 +65,19 @@ export default function App() {
               </div>
             </div>
           </button>
+
+          <button
+            onClick={() => setScreen('novel')}
+            className="w-full bg-white/15 backdrop-blur-sm rounded-2xl p-5 text-left hover:bg-white/25 transition-all active:scale-[0.98] group border border-white/10"
+          >
+            <div className="flex items-center gap-4">
+              <span className="text-4xl group-hover:scale-110 transition-transform">📖</span>
+              <div>
+                <h2 className="text-white font-bold text-lg">Interactive Novels</h2>
+                <p className="text-[#C5A55A]/80 text-xs">อ่านเรื่องสั้น เลือกทางเลือก เปลี่ยนเรื่องราว</p>
+              </div>
+            </div>
+          </button>
         </div>
 
         <div className="mt-8 flex justify-center gap-2 flex-wrap">
@@ -72,7 +87,7 @@ export default function App() {
         </div>
 
         <div className="mt-6 pt-4 border-t border-white/10">
-          <p className="text-[#C5A55A]/60 text-xs">8 หมวดหมู่ · 64 คำศัพท์ · 3 เกม</p>
+          <p className="text-[#C5A55A]/60 text-xs">8 หมวดหมู่ · 64 คำศัพท์ · 4 เกม</p>
           <p className="text-white/30 text-xs mt-1">games.knuamd.com</p>
         </div>
       </div>
