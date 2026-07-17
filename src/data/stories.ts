@@ -122,7 +122,7 @@ export const stories: Story[] = [
           { text: 'Talk to the barista', textTH: 'คุยกับพนักงาน', nextScene: 'talk' },
         ],
       },
-      order-food: {
+      'order-food': {
         id: 'order-food',
         title: 'Order Up!',
         illustration: '🧋',
@@ -134,7 +134,7 @@ export const stories: Story[] = [
           { text: 'Check your phone', textTH: 'ดูมือถือ', nextScene: 'phone' },
         ],
       },
-      order-coffee: {
+      'order-coffee': {
         id: 'order-coffee',
         title: 'Your Coffee',
         illustration: '☕',
