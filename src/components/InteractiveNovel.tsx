@@ -136,23 +136,50 @@ function StatBar({ icon, label, value, max, color }: { icon: string; label: stri
   )
 }
 
-function CharacterPanel({ stats, characterId, showMood = true }: { stats: CharacterStats; characterId: string; showMood?: boolean }) {
+function CharacterPanel({ stats, characterId, showMood = true, compact = false }: { stats: CharacterStats; characterId: string; showMood?: boolean; compact?: boolean }) {
   const mood = getCharacterMood(stats)
   const baseEmoji = getCharacterBaseEmoji(characterId)
+  const charName = characters.find(c => c.id === characterId)?.name || 'Hero'
+
+  if (compact) {
+    return (
+      <div className="bg-white rounded-2xl p-3 border border-orange-100 shadow-sm">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="relative">
+            <span className="text-5xl block">{baseEmoji}</span>
+            <span className="absolute -bottom-1 -right-1 text-lg">{mood.emoji}</span>
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-700 font-bold text-sm">{charName}</span>
+              <span className="text-[#E8734A] text-[10px] font-bold bg-[#E8734A]/10 px-1.5 py-0.5 rounded-full">Lv.{stats.level}</span>
+            </div>
+            <span className={cn('text-[11px] font-medium', mood.color)}>{mood.label}</span>
+          </div>
+        </div>
+        <StatBar icon="❤️" label="HP" value={stats.hp} max={stats.maxHp} color={statColors.hp} />
+        <StatBar icon="🍖" label="หิว" value={stats.hunger} max={stats.maxHunger} color={statColors.hunger} />
+        <StatBar icon="💪" label="ใจ" value={stats.courage} max={stats.maxCourage} color={statColors.courage} />
+        <div className="flex gap-3 mt-1.5 pt-1.5 border-t border-gray-100">
+          <div className="flex items-center gap-1"><span className="text-xs">💰</span><span className="text-[#D4A853] font-bold text-[10px]">{stats.gold}</span></div>
+          <div className="flex items-center gap-1 flex-1"><span className="text-[10px]">⭐</span><span className="text-gray-400 text-[10px]">{stats.exp}/{stats.maxExp}</span></div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white rounded-2xl p-4 border border-orange-100 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <span className="text-2xl">{baseEmoji}</span>
-            {showMood && (
-              <span className="absolute -bottom-1 -right-1 text-sm">{mood.emoji}</span>
-            )}
-          </div>
-          <div>
-            <span className="text-gray-700 font-bold text-xs block">{characters.find(c => c.id === characterId)?.name || 'Hero'}</span>
-            {showMood && <span className={cn('text-[10px] font-medium', mood.color)}>{mood.label}</span>}
-          </div>
+      <div className="text-center mb-3">
+        <div className="relative inline-block">
+          <span className="text-5xl block">{baseEmoji}</span>
+          {showMood && (
+            <span className="absolute -bottom-2 -right-2 text-2xl bg-white rounded-full shadow-sm">{mood.emoji}</span>
+          )}
+        </div>
+        <div className="mt-1">
+          <span className="text-gray-700 font-bold text-sm block">{charName}</span>
+          {showMood && <span className={cn('text-[10px] font-medium', mood.color)}>{mood.label}</span>}
         </div>
         <span className="text-[#E8734A] text-[10px] font-bold bg-[#E8734A]/10 px-2 py-0.5 rounded-full">Lv.{stats.level}</span>
       </div>
@@ -575,23 +602,24 @@ export default function InteractiveNovel({ onBack }: Props) {
           <div className="flex gap-4">
             {/* Main Content */}
             <div className="flex-1 min-w-0" ref={contentRef}>
-              {/* Scene Illustration */}
-              <div className={cn('rounded-2xl overflow-hidden mb-4 h-36 flex items-center justify-center shadow-sm transition-opacity duration-200', sceneTransition ? 'opacity-0' : 'opacity-100')} style={{ background: illustrationBg }}>
+              {/* Scene Illustration + Character */}
+              <div className={cn('rounded-2xl overflow-hidden mb-4 h-48 flex items-center justify-center shadow-sm transition-opacity duration-200 relative', sceneTransition ? 'opacity-0' : 'opacity-100')} style={{ background: illustrationBg }}>
                 <span className="text-6xl">{scene.illustration || '🌙'}</span>
+                {/* Character floating on scene */}
+                <div className="absolute bottom-3 left-3 flex items-end gap-2 bg-white/80 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-md">
+                  <span className="text-4xl">{getCharacterBaseEmoji(selectedCharacter.id)}</span>
+                  <span className="text-xl">{mood.emoji}</span>
+                </div>
+                {/* Mood label badge */}
+                <div className={cn('absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-medium bg-white/80 backdrop-blur-sm shadow-sm', mood.color)}>
+                  {mood.label}
+                </div>
               </div>
 
               {/* Title */}
               {scene.title && (
                 <h2 className="text-gray-800 font-bold text-lg mb-3">§ {scene.title}</h2>
               )}
-
-              {/* Character + Mood inline */}
-              <div className="flex items-center gap-2 mb-3 p-2 bg-white/60 rounded-xl">
-                <span className="text-xl">{getCharacterBaseEmoji(selectedCharacter.id)}</span>
-                <span className="text-lg">{mood.emoji}</span>
-                <span className={cn('text-xs font-medium', mood.color)}>{mood.label}</span>
-                <span className="text-gray-300 text-[10px] ml-auto">Lv.{stats.level} {selectedCharacter.name}</span>
-              </div>
 
               {/* Bilingual Story Text */}
               <div className="mb-4">
@@ -646,7 +674,7 @@ export default function InteractiveNovel({ onBack }: Props) {
           {/* Mobile Stats (bottom) */}
           <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-[#FDF6EE]/95 backdrop-blur border-t border-orange-100 p-3 z-40">
             <div className="max-w-lg mx-auto">
-              <CharacterPanel stats={stats} characterId={selectedCharacter.id} showMood={false} />
+              <CharacterPanel stats={stats} characterId={selectedCharacter.id} compact />
             </div>
           </div>
         </div>
