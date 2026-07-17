@@ -1,10 +1,68 @@
+export interface StatEffect {
+  hp?: number
+  hunger?: number
+  courage?: number
+  gold?: number
+  exp?: number
+}
+
 export interface StoryChoice {
   text: string
   textTH: string
   nextScene: string
   vocabulary?: { word: string; meaning: string }[]
   consequence?: string
+  statEffect?: StatEffect
 }
+
+export interface Character {
+  id: string
+  name: string
+  emoji: string
+  description: string
+  descriptionTH: string
+  baseStats: {
+    hp: number
+    hunger: number
+    courage: number
+    gold: number
+  }
+}
+
+export const characters: Character[] = [
+  {
+    id: 'mage',
+    name: 'Aria',
+    emoji: '🧙‍♀️',
+    description: 'A curious young mage who loves learning',
+    descriptionTH: 'นักเวทย์สาวที่ชอบเรียนรู้',
+    baseStats: { hp: 80, hunger: 70, courage: 95, gold: 15 },
+  },
+  {
+    id: 'knight',
+    name: 'Gareth',
+    emoji: '⚔️',
+    description: 'A brave knight seeking adventure',
+    descriptionTH: 'อั历วินกล้าหาญที่แสวงการผจญภัย',
+    baseStats: { hp: 100, hunger: 80, courage: 80, gold: 10 },
+  },
+  {
+    id: 'healer',
+    name: 'Lily',
+    emoji: '🌿',
+    description: 'A gentle healer with a warm heart',
+    descriptionTH: 'นักบวชสาวใจดี',
+    baseStats: { hp: 90, hunger: 90, courage: 75, gold: 20 },
+  },
+  {
+    id: 'rogue',
+    name: 'Kai',
+    emoji: '🗡️',
+    description: 'A clever rogue who always finds a way',
+    descriptionTH: 'โจรหนุ่มที่ฉลาดหลักแหลม',
+    baseStats: { hp: 75, hunger: 70, courage: 85, gold: 30 },
+  },
+]
 
 export interface StoryScene {
   id: string
