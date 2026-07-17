@@ -6,15 +6,11 @@ import { cn } from '@/lib/cn'
 interface Props { onBack: () => void }
 
 interface CharacterStats {
-  hp: number
-  maxHp: number
-  hunger: number
-  maxHunger: number
-  courage: number
-  maxCourage: number
+  hp: number; maxHp: number
+  hunger: number; maxHunger: number
+  courage: number; maxCourage: number
   gold: number
-  exp: number
-  maxExp: number
+  exp: number; maxExp: number
   level: number
 }
 
@@ -23,28 +19,26 @@ type GamePhase = 'select-story' | 'select-character' | 'playing' | 'ending'
 const SAVE_KEY = 'knuamd-novel-save'
 const CHAR_IMAGES_KEY = 'knuamd-char-images'
 
-function getCharacterMood(stats: CharacterStats): { emoji: string; label: string } {
-  const hpPct = stats.hp / stats.maxHp
-  const hungerPct = stats.hunger / stats.maxHunger
-  const couragePct = stats.courage / stats.maxCourage
-  if (stats.exp >= stats.maxExp) return { emoji: '🥳', label: 'Level Up!' }
-  if (hpPct <= 0.2) return { emoji: '😵', label: 'วิกฤต!' }
-  if (hungerPct <= 0.15) return { emoji: '🤤', label: 'หิวมาก' }
-  if (couragePct <= 0.2) return { emoji: '😨', label: 'กลัวมาก' }
-  if (hpPct <= 0.4) return { emoji: '😰', label: 'กังวล' }
-  if (hpPct >= 0.8 && hungerPct >= 0.6 && couragePct >= 0.7) return { emoji: '😎', label: 'มั่นใจ' }
-  if (hpPct >= 0.6 && hungerPct >= 0.4) return { emoji: '😊', label: 'มีความสุข' }
-  if (couragePct >= 0.6) return { emoji: '🙂', label: 'พร้อม' }
-  if (stats.gold > 50) return { emoji: '🤑', label: 'รวย!' }
-  return { emoji: '😐', label: 'ปกติ' }
+function getMood(s: CharacterStats) {
+  const hp = s.hp / s.maxHp, hng = s.hunger / s.maxHunger, crg = s.courage / s.maxCourage
+  if (s.exp >= s.maxExp) return { e: '🥳', l: 'Level Up!' }
+  if (hp <= 0.2) return { e: '😵', l: 'วิกฤต!' }
+  if (hng <= 0.15) return { e: '🤤', l: 'หิวมาก' }
+  if (crg <= 0.2) return { e: '😨', l: 'กลัวมาก' }
+  if (hp <= 0.4) return { e: '😰', l: 'กังวล' }
+  if (hp >= 0.8 && hng >= 0.6 && crg >= 0.7) return { e: '😎', l: 'มั่นใจ' }
+  if (hp >= 0.6 && hng >= 0.4) return { e: '😊', l: 'มีความสุข' }
+  if (crg >= 0.6) return { e: '🙂', l: 'พร้อม' }
+  if (s.gold > 50) return { e: '🤑', l: 'รวย!' }
+  return { e: '😐', l: 'ปกติ' }
 }
 
-function getCharEmoji(id: string) { return characters.find(c => c.id === id)?.emoji || '🧑' }
-function getCharName(id: string) { return characters.find(c => c.id === id)?.name || 'Hero' }
-function loadImages(): Record<string, string> { try { return JSON.parse(localStorage.getItem(CHAR_IMAGES_KEY) || '{}') } catch { return {} } }
-function fmt(ms: number) { const t = Math.floor(ms / 1000); return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}` }
+const ce = (id: string) => characters.find(c => c.id === id)?.emoji || '🧑'
+const cn2 = (id: string) => characters.find(c => c.id === id)?.name || 'Hero'
+const loadImg = (): Record<string, string> => { try { return JSON.parse(localStorage.getItem(CHAR_IMAGES_KEY) || '{}') } catch { return {} } }
+const fmt = (ms: number) => { const t = Math.floor(ms / 1000); return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}` }
 
-const sceneStatEffects: Record<string, StatEffect> = {
+const effects: Record<string, StatEffect> = {
   inside: { courage: 5, exp: 5 }, menu: { exp: 3 }, desserts: { hunger: 5 },
   recommend: { exp: 8, hunger: 5 }, 'order-food': { hunger: 15, gold: -15, exp: 5 },
   'order-coffee': { hunger: 8, gold: -8, exp: 5 }, talk: { exp: 10, courage: 5 },
@@ -57,230 +51,235 @@ const sceneStatEffects: Record<string, StatEffect> = {
   'ending-perfect': { hunger: 20, exp: 10, gold: 10 }, 'ending-save': { gold: 15, exp: 8 },
 }
 
-const sceneIllustrations: Record<string, string> = {
-  '🌅': 'linear-gradient(135deg, #F6D365 0%, #FDA085 100%)', '🚪': 'linear-gradient(135deg, #D4A574 0%, #C48B5E 100%)',
-  '✨': 'linear-gradient(135deg, #A8C0FF 0%, #D4B8FF 100%)', '📋': 'linear-gradient(135deg, #E8D5B7 0%, #C9B896 100%)',
-  '🍰': 'linear-gradient(135deg, #FECDA6 0%, #F6A6C1 100%)', '☕': 'linear-gradient(135deg, #D4A574 0%, #A67C52 100%)',
-  '🧋': 'linear-gradient(135deg, #E8C8A0 0%, #D4A574 100%)', '👍': 'linear-gradient(135deg, #A8E6CF 0%, #DCEDC1 100%)',
-  '💬': 'linear-gradient(135deg, #B8C6DB 0%, #F5F7FA 100%)', '📱': 'linear-gradient(135deg, #C3B1E1 0%, #E8D5F5 100%)',
-  '📖': 'linear-gradient(135deg, #F6D365 0%, #E8C87A 100%)', '🏛️': 'linear-gradient(135deg, #E8C87A 0%, #D4A574 100%)',
-  '🎨': 'linear-gradient(135deg, #FECDA6 0%, #F6A6C1 100%)', '🔒': 'linear-gradient(135deg, #C9B896 0%, #A69076 100%)',
-  '🔎': 'linear-gradient(135deg, #B8C6DB 0%, #A8C0FF 100%)', '🔷': 'linear-gradient(135deg, #A8C0FF 0%, #B8C6DB 100%)',
-  '🗝️': 'linear-gradient(135deg, #E8C87A 0%, #F6D365 100%)', '🛒': 'linear-gradient(135deg, #A8E6CF 0%, #DCEDC1 100%)',
-  '🌈': 'linear-gradient(135deg, #F6D365 0%, #FDA085 100%)', '🍗': 'linear-gradient(135deg, #FECDA6 0%, #E8A87C 100%)',
-  '💡': 'linear-gradient(135deg, #F6D365 0%, #FECDA6 100%)', '🎉': 'linear-gradient(135deg, #F6A6C1 0%, #FECDA6 100%)',
-  '💰': 'linear-gradient(135deg, #F6D365 0%, #E8C87A 100%)', '🦀': 'linear-gradient(135deg, #F08A5D 0%, #FECDA6 100%)',
+const illBg: Record<string, string> = {
+  '🌅': 'linear-gradient(135deg, #4a3520 0%, #6b4a28 50%, #8b6a38 100%)',
+  '🚪': 'linear-gradient(135deg, #3a2818 0%, #5a3a20 50%, #4a3018 100%)',
+  '✨': 'linear-gradient(135deg, #2a2848 0%, #4a3868 50%, #3a2858 100%)',
+  '📋': 'linear-gradient(135deg, #3a3020 0%, #5a4830 50%, #4a3828 100%)',
+  '🍰': 'linear-gradient(135deg, #4a3028 0%, #6a4038 50%, #5a3830 100%)',
+  '☕': 'linear-gradient(135deg, #3a2818 0%, #5a3a20 50%, #4a3018 100%)',
+  '🧋': 'linear-gradient(135deg, #3a3020 0%, #5a4830 50%, #4a3828 100%)',
+  '👍': 'linear-gradient(135deg, #2a3828 0%, #3a5038 50%, #2a4030 100%)',
+  '💬': 'linear-gradient(135deg, #2a3040 0%, #3a4858 50%, #2a3848 100%)',
+  '📱': 'linear-gradient(135deg, #302848 0%, #483868 50%, #382858 100%)',
+  '📖': 'linear-gradient(135deg, #3a3018 0%, #5a4828 50%, #4a3820 100%)',
+  '🏛️': 'linear-gradient(135deg, #3a3018 0%, #5a4828 50%, #4a3820 100%)',
+  '🎨': 'linear-gradient(135deg, #4a3028 0%, #6a4038 50%, #5a3830 100%)',
+  '🔒': 'linear-gradient(135deg, #302818 0%, #4a3820 50%, #3a3018 100%)',
+  '🔎': 'linear-gradient(135deg, #2a3040 0%, #3a4858 50%, #2a3848 100%)',
+  '🔷': 'linear-gradient(135deg, #282848 0%, #3a3868 50%, #282858 100%)',
+  '🗝️': 'linear-gradient(135deg, #3a3018 0%, #5a4828 50%, #4a3820 100%)',
+  '🛒': 'linear-gradient(135deg, #2a3828 0%, #3a5038 50%, #2a4030 100%)',
+  '🌈': 'linear-gradient(135deg, #3a2820 0%, #5a3830 50%, #4a3028 100%)',
+  '🍗': 'linear-gradient(135deg, #3a2818 0%, #5a3a20 50%, #4a3018 100%)',
+  '💡': 'linear-gradient(135deg, #3a3018 0%, #5a4828 50%, #4a3820 100%)',
+  '🎉': 'linear-gradient(135deg, #4a3028 0%, #6a4038 50%, #5a3830 100%)',
+  '💰': 'linear-gradient(135deg, #3a3018 0%, #5a4828 50%, #4a3820 100%)',
+  '🦀': 'linear-gradient(135deg, #4a2818 0%, #6a3820 50%, #5a3018 100%)',
 }
 
-// ─── Sparkle Background ──────────────────────────────────────────────────────
+// ─── Sparkle Background ─────────────────────────────────────────────────
 
-function SparkleBG() {
-  const particles = useMemo(() => Array.from({ length: 20 }, (_, i) => ({
-    left: `${Math.random() * 100}%`,
-    delay: `${Math.random() * 8}s`,
-    duration: `${6 + Math.random() * 6}s`,
-    size: `${2 + Math.random() * 3}px`,
+function Sparkles_BG() {
+  const p = useMemo(() => Array.from({ length: 35 }, () => ({
+    l: `${5 + Math.random() * 90}%`, b: `${-5 + Math.random() * 20}%`,
+    d: `${3 + Math.random() * 7}s`, dur: `${5 + Math.random() * 8}s`,
+    sz: `${2 + Math.random() * 4}px`, gold: Math.random() > 0.3,
   })), [])
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {particles.map((p, i) => (
-        <div key={i} className="sparkle-particle" style={{ left: p.left, bottom: '-10px', animationDelay: p.delay, animationDuration: p.duration, width: p.size, height: p.size }} />
+      {p.map((x, i) => (
+        <div key={i} className={`sparkle ${x.gold ? 'sparkle-gold' : 'sparkle-white'}`}
+          style={{ left: x.l, bottom: x.b, animation: `sparkle-up ${x.dur} linear ${x.d} infinite`, width: x.sz, height: x.sz }} />
       ))}
     </div>
   )
 }
 
-// ─── Avatar ──────────────────────────────────────────────────────────────────
+// ─── Glass Dome ─────────────────────────────────────────────────────────
 
-function Avatar({ characterId, image, size = 'text-4xl' }: { characterId: string; image?: string | null; size?: string }) {
-  if (image) return <img src={image} alt="" className={cn(size === 'text-4xl' ? 'w-10 h-10' : size === 'text-5xl' ? 'w-12 h-12' : 'w-14 h-14', 'rounded-full object-cover ring-2 ring-[#C5A55A]/50')} />
-  return <span className={size}>{getCharEmoji(characterId)}</span>
+function GlassDome({ emoji, moodEmoji, image }: { emoji: string; moodEmoji: string; image?: string | null }) {
+  return (
+    <div className="glass-dome">
+      <div className="glass-dome-dome">
+        <div className="glass-dome-char">
+          {image ? <img src={image} alt="" className="w-10 h-10 rounded-full object-cover" /> : <span className="text-3xl">{emoji}</span>}
+        </div>
+      </div>
+      <div className="glass-dome-base" />
+      <span className="glass-dome-mood">{moodEmoji}</span>
+    </div>
+  )
 }
 
-// ─── Metallic Stat Bar ───────────────────────────────────────────────────────
+// ─── 3D Metallic Bar ────────────────────────────────────────────────────
 
-function MetalBar({ label, icon, value, max, barClass }: { label: string; icon: string; value: number; max: number; barClass: string }) {
+function Bar3D({ icon, label, value, max, cls }: { icon: string; label: string; value: number; max: number; cls: string }) {
   const pct = Math.max(0, Math.min(100, (value / max) * 100))
   return (
-    <div className="mb-2">
+    <div className="mb-2.5">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[11px] text-[#C5A55A]/70 flex items-center gap-1"><span className="text-xs">{icon}</span>{label}</span>
-        <span className="text-[11px] text-[#C5A55A] font-mono font-bold">{value}/{max}</span>
+        <span className="text-[11px] text-[#C5A55A]/70 flex items-center gap-1.5"><span className="text-xs">{icon}</span>{label}</span>
+        <span className="value-badge text-[10px] font-bold px-2 py-0.5 rounded font-mono">{value}/{max}</span>
       </div>
-      <div className="stat-bar-metallic bg-black/30">
-        <div className={cn('h-full rounded-[6px] transition-all duration-700', barClass)} style={{ width: `${pct}%` }} />
+      <div className="bar-3d">
+        <div className={cn('bar-3d-fill', cls)} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )
 }
 
-// ─── Wood Character Panel ────────────────────────────────────────────────────
+// ─── Wood Panel ─────────────────────────────────────────────────────────
 
-function WoodPanel({ stats, charId, image, compact = false }: { stats: CharacterStats; charId: string; image?: string | null; compact?: boolean }) {
-  const mood = getCharacterMood(stats)
+function WoodPanel({ stats, cid, img, compact = false }: { stats: CharacterStats; cid: string; img?: string | null; compact?: boolean }) {
+  const m = getMood(stats)
   if (compact) {
     return (
       <div className="wood-panel p-3">
-        <div className="flex items-center gap-3 mb-2">
-          <Avatar characterId={charId} image={image} size="text-4xl" />
-          <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-3 mb-3">
+          {img ? <img src={img} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-[#C5A55A]/40" /> : <span className="text-3xl">{ce(cid)}</span>}
+          <span className="text-lg">{m.e}</span>
+          <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-[#C5A55A] font-bold text-sm">{getCharName(charId)}</span>
-              <span className="text-[10px] font-bold bg-[#C5A55A]/20 text-[#C5A55A] px-1.5 py-0.5 rounded-full border border-[#C5A55A]/30">Lv.{stats.level}</span>
-              <span className="text-sm ml-auto">{mood.emoji}</span>
+              <span className="gold-text-bright font-bold text-sm">{cn2(cid)}</span>
+              <span className="value-badge text-[10px] font-bold px-1.5 py-0.5 rounded">Lv.{stats.level}</span>
             </div>
-            <span className="text-[10px] text-[#C5A55A]/60">{mood.label}</span>
+            <span className="text-[10px] text-[#C5A55A]/50">{m.l}</span>
           </div>
         </div>
-        <MetalBar label="HP" icon="❤️" value={stats.hp} max={stats.maxHp} barClass="stat-bar-hp" />
-        <MetalBar label="หิว" icon="🍖" value={stats.hunger} max={stats.maxHunger} barClass="stat-bar-hunger" />
-        <MetalBar label="ใจ" icon="💪" value={stats.courage} max={stats.maxCourage} barClass="stat-bar-courage" />
-        <div className="flex gap-3 mt-1.5 pt-1.5 border-t border-[#C5A55A]/20">
+        <Bar3D icon="🍖" label="หิว" value={stats.hunger} max={stats.maxHunger} cls="bar-hunger" />
+        <Bar3D icon="💪" label="ใจ" value={stats.courage} max={stats.maxCourage} cls="bar-courage" />
+        <div className="flex gap-3 mt-2 pt-2 border-t border-[#C5A55A]/20">
           <span className="text-[10px] text-[#C5A55A]">💰 {stats.gold}</span>
-          <span className="text-[10px] text-[#C5A55A]/60 ml-auto">⭐ {stats.exp}/{stats.maxExp}</span>
+          <span className="text-[10px] text-[#C5A55A]/50 ml-auto">⭐ {stats.exp}/{stats.maxExp}</span>
         </div>
       </div>
     )
   }
   return (
     <div className="wood-panel p-4">
-      <div className="text-center mb-3">
-        <div className="relative inline-block">
-          <Avatar characterId={charId} image={image} size="text-5xl" />
-          <span className="absolute -bottom-2 -right-2 text-2xl">{mood.emoji}</span>
+      <div className="flex items-center gap-3 mb-3">
+        {img ? <img src={img} alt="" className="w-12 h-12 rounded-full object-cover ring-2 ring-[#C5A55A]/40" /> : <span className="text-4xl">{ce(cid)}</span>}
+        <span className="text-xl">{m.e}</span>
+        <div>
+          <span className="gold-text-bright font-bold text-sm block">{cn2(cid)}</span>
+          <span className="value-badge text-[10px] font-bold px-2 py-0.5 rounded inline-block mt-0.5">Lv.{stats.level}</span>
         </div>
-        <div className="mt-2">
-          <span className="text-[#C5A55A] font-bold text-sm block">{getCharName(charId)}</span>
-          <span className="text-[10px] text-[#C5A55A]/60">{mood.label}</span>
-        </div>
-        <span className="text-[10px] font-bold bg-[#C5A55A]/20 text-[#C5A55A] px-2 py-0.5 rounded-full border border-[#C5A55A]/30 mt-1 inline-block">Lv.{stats.level}</span>
       </div>
-      <MetalBar label="HP" icon="❤️" value={stats.hp} max={stats.maxHp} barClass="stat-bar-hp" />
-      <MetalBar label="หิว" icon="🍖" value={stats.hunger} max={stats.maxHunger} barClass="stat-bar-hunger" />
-      <MetalBar label="ใจ" icon="💪" value={stats.courage} max={stats.maxCourage} barClass="stat-bar-courage" />
+      <Bar3D icon="❤️" label="HP" value={stats.hp} max={stats.maxHp} cls="bar-hp" />
+      <Bar3D icon="🍖" label="หิว" value={stats.hunger} max={stats.maxHunger} cls="bar-hunger" />
+      <Bar3D icon="💪" label="ใจ" value={stats.courage} max={stats.maxCourage} cls="bar-courage" />
       <div className="mt-2 pt-2 border-t border-[#C5A55A]/20">
-        <MetalBar label="EXP" icon="⭐" value={stats.exp} max={stats.maxExp} barClass="stat-bar-exp" />
+        <Bar3D icon="⭐" label="EXP" value={stats.exp} max={stats.maxExp} cls="bar-exp" />
       </div>
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#C5A55A]/20">
         <span className="text-sm">💰</span>
-        <span className="text-[#C5A55A] font-bold text-sm">{stats.gold} Gold</span>
+        <span className="gold-text-bright font-bold text-sm">{stats.gold} Gold</span>
       </div>
     </div>
   )
 }
 
-// ─── Vocabulary Popup ────────────────────────────────────────────────────────
+// ─── Vocabulary Popup ───────────────────────────────────────────────────
 
-function VocabPopup({ vocabulary, statEffect, onClose }: { vocabulary: { word: string; meaning: string }[]; statEffect?: StatEffect; onClose: () => void }) {
-  const effects = statEffect ? Object.entries(statEffect).filter(([, v]) => v !== 0) : []
-  const labels: Record<string, string> = { hp: '❤️ HP', hunger: '🍖 หิว', courage: '💪 ใจ', gold: '💰 Gold', exp: '⭐ EXP' }
+function VocabPopup({ vocab, eff, onClose }: { vocab: { word: string; meaning: string }[]; eff?: StatEffect; onClose: () => void }) {
+  const e = eff ? Object.entries(eff).filter(([, v]) => v !== 0) : []
+  const lb: Record<string, string> = { hp: '❤️ HP', hunger: '🍖 หิว', courage: '💪 ใจ', gold: '💰 Gold', exp: '⭐ EXP' }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="metal-frame p-5 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+      <div className="chrome-frame p-5 max-w-sm w-full" onClick={ev => ev.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <BookOpen size={16} className="gold-text" />
-            <span className="text-sm font-bold gold-text">คำศัพท์ใหม่</span>
-          </div>
-          <button onClick={onClose} className="text-[#C5A55A]/50 hover:text-[#C5A55A]"><X size={16} /></button>
+          <div className="flex items-center gap-2"><BookOpen size={16} className="gold-text" /><span className="text-sm font-bold gold-text" style={{ fontFamily: 'Georgia, serif' }}>คำศัพท์ใหม่</span></div>
+          <button onClick={onClose} className="text-[#C5A55A]/40 hover:text-[#C5A55A] transition-colors"><X size={16} /></button>
         </div>
-        {vocabulary.length > 0 ? (
+        {vocab.length > 0 ? (
           <div className="space-y-2 mb-3">
-            {vocabulary.map((v, i) => (
+            {vocab.map((v, i) => (
               <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-[#C5A55A]/10 border border-[#C5A55A]/20">
-                <span className="gold-text font-bold text-sm">{v.word}</span>
-                <span className="text-[#C5A55A]/30">—</span>
-                <span className="text-[#C5A55A]/80 text-sm">{v.meaning}</span>
+                <span className="gold-text-bright font-bold text-sm">{v.word}</span>
+                <span className="text-[#C5A55A]/25">—</span>
+                <span className="text-[#C5A55A]/70 text-sm">{v.meaning}</span>
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-[#C5A55A]/40 text-xs text-center py-2">ไม่มีคำศัพท์ใหม่</p>
-        )}
-        {effects.length > 0 && (
+        ) : <p className="text-[#C5A55A]/30 text-xs text-center py-2">ไม่มีคำศัพท์ใหม่</p>}
+        {e.length > 0 && (
           <div className="border-t border-[#C5A55A]/20 pt-3 mb-3">
-            <p className="text-[10px] text-[#C5A55A]/50 mb-2">📊 ผลต่อตัวละคร</p>
+            <p className="text-[10px] text-[#C5A55A]/40 mb-2">📊 ผลต่อตัวละคร</p>
             <div className="flex flex-wrap gap-2">
-              {effects.map(([k, v]) => (
-                <span key={k} className={cn('text-[11px] px-2 py-0.5 rounded-full font-bold border', (v as number) > 0 ? 'bg-green-900/30 text-green-400 border-green-500/30' : 'bg-red-900/30 text-red-400 border-red-500/30')}>
-                  {labels[k]} {(v as number) > 0 ? '+' : ''}{v}
+              {e.map(([k, v]) => (
+                <span key={k} className={cn('text-[11px] px-2 py-0.5 rounded-full font-bold border', (v as number) > 0 ? 'bg-green-900/40 text-green-400 border-green-500/30' : 'bg-red-900/40 text-red-400 border-red-500/30')}>
+                  {lb[k]} {(v as number) > 0 ? '+' : ''}{v}
                 </span>
               ))}
             </div>
           </div>
         )}
-        <button onClick={onClose} className="w-full py-2.5 rounded-xl font-bold text-sm gold-text border border-[#C5A55A]/30 bg-[#C5A55A]/10 hover:bg-[#C5A55A]/20 transition-all">
-          เข้าใจแล้ว ✨
-        </button>
+        <button onClick={onClose} className="w-full py-2.5 rounded-xl font-bold text-sm gold-text border border-[#C5A55A]/30 bg-[#C5A55A]/10 hover:bg-[#C5A55A]/20 transition-all">เข้าใจแล้ว ✨</button>
       </div>
     </div>
   )
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+function renderText(th: string, en: string) {
+  return (
+    <>
+      {th.split('\n\n').map((p, i) => <p key={`t${i}`} className="text-[#3a2510] text-[15px] leading-[1.8] my-3" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>{p}</p>)}
+      {en.split('\n\n').map((p, i) => <p key={`e${i}`} className="text-[#6a5030]/70 text-[15px] leading-[1.8] my-3 italic" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>{p}</p>)}
+    </>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function InteractiveNovel({ onBack }: Props) {
   const [phase, setPhase] = useState<GamePhase>('select-story')
-  const [selectedStory, setSelectedStory] = useState<Story | null>(null)
-  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null)
-  const [currentScene, setCurrentScene] = useState('')
-  const [history, setHistory] = useState<string[]>([])
+  const [selStory, setSelStory] = useState<Story | null>(null)
+  const [selChar, setSelChar] = useState<Character | null>(null)
+  const [scene, setScene] = useState('')
+  const [hist, setHist] = useState<string[]>([])
   const [stats, setStats] = useState<CharacterStats>({ hp: 100, maxHp: 100, hunger: 80, maxHunger: 100, courage: 90, maxCourage: 100, gold: 10, exp: 0, maxExp: 100, level: 1 })
   const [showVocab, setShowVocab] = useState(false)
-  const [vocabData, setVocabData] = useState<{ vocabulary: { word: string; meaning: string }[]; statEffect?: StatEffect }>({ vocabulary: [] })
-  const [pendingScene, setPendingScene] = useState<string | null>(null)
-  const [sceneTransition, setSceneTransition] = useState(false)
-  const [gameStart, setGameStart] = useState(Date.now())
-  const [choiceStart, setChoiceStart] = useState(Date.now())
+  const [vData, setVData] = useState<{ vocab: { word: string; meaning: string }[]; eff?: StatEffect }>({ vocab: [] })
+  const [pendScene, setPendScene] = useState<string | null>(null)
+  const [trans, setTrans] = useState(false)
+  const [gStart, setGStart] = useState(Date.now())
+  const [cStart, setCStart] = useState(Date.now())
   const [now, setNow] = useState(Date.now())
-  const [visitedGoals, setVisitedGoals] = useState<Set<string>>(new Set())
-  const [charImages, setCharImages] = useState<Record<string, string>>({})
-  const contentRef = useRef<HTMLDivElement>(null)
+  const [gVisited, setGVisited] = useState<Set<string>>(new Set())
+  const [charImgs, setCharImgs] = useState<Record<string, string>>({})
+  const ref = useRef<HTMLDivElement>(null)
 
-  useEffect(() => { setCharImages(loadImages()) }, [])
+  useEffect(() => { setCharImgs(loadImg()) }, [])
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t) }, [])
 
   useEffect(() => {
     try {
-      const s = localStorage.getItem(SAVE_KEY)
-      if (s) {
-        const d = JSON.parse(s)
-        if (d.storyId && d.characterId && d.currentScene) {
-          const st = stories.find(x => x.id === d.storyId)
-          const ch = characters.find(x => x.id === d.characterId)
-          if (st && ch && d.stats) { setSelectedStory(st); setSelectedCharacter(ch); setCurrentScene(d.currentScene); setHistory(d.history || [d.currentScene]); setStats(d.stats); setPhase('playing'); setGameStart(d.savedAt || Date.now()); setChoiceStart(d.savedAt || Date.now()) }
-        }
+      const d = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')
+      if (d?.storyId && d?.characterId && d?.currentScene) {
+        const s = stories.find(x => x.id === d.storyId), c = characters.find(x => x.id === d.characterId)
+        if (s && c && d.stats) { setSelStory(s); setSelChar(c); setScene(d.currentScene); setHist(d.history || [d.currentScene]); setStats(d.stats); setPhase('playing'); setGStart(d.savedAt || Date.now()); setCStart(d.savedAt || Date.now()) }
       }
     } catch {}
   }, [])
 
-  const save = useCallback((sid: string, cid: string, scene: string, h: string[], s: CharacterStats) => {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ storyId: sid, characterId: cid, currentScene: scene, history: h, stats: s, savedAt: Date.now() })) } catch {}
+  const saveNow = useCallback((sid: string, cid: string, sc: string, h: string[], s: CharacterStats) => {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ storyId: sid, characterId: cid, currentScene: sc, history: h, stats: s, savedAt: Date.now() })) } catch {}
   }, [])
-  const clearSave = useCallback(() => { try { localStorage.removeItem(SAVE_KEY) } catch {} }, [])
+  const clearAll = useCallback(() => { try { localStorage.removeItem(SAVE_KEY) } catch {} }, [])
 
-  const startStory = useCallback((story: Story) => { setSelectedStory(story); setPhase('select-character') }, [])
-
-  const selectChar = useCallback((char: Character) => {
-    if (!selectedStory) return
-    setSelectedCharacter(char)
-    const s: CharacterStats = { hp: char.baseStats.hp, maxHp: char.baseStats.hp + 20, hunger: char.baseStats.hunger, maxHunger: 100, courage: char.baseStats.courage, maxCourage: 100, gold: char.baseStats.gold, exp: 0, maxExp: 100, level: 1 }
-    setStats(s); setCurrentScene(selectedStory.startScene); setHistory([selectedStory.startScene]); setPhase('playing')
-    setGameStart(Date.now()); setChoiceStart(Date.now()); setVisitedGoals(new Set()); clearSave()
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [selectedStory, clearSave])
-
-  const goScene = useCallback((sceneId: string) => {
-    setSceneTransition(true)
-    setTimeout(() => {
-      setCurrentScene(sceneId); setSceneTransition(false); setChoiceStart(Date.now())
-      if (selectedStory?.goal) setVisitedGoals(prev => { const n = new Set(prev); if (selectedStory.goal!.steps.find(s => s.sceneId === sceneId)) n.add(sceneId); return n })
+  const goTo = useCallback((sid: string) => {
+    setTrans(true); setTimeout(() => {
+      setScene(sid); setTrans(false); setCStart(Date.now())
+      if (selStory?.goal) setGVisited(p => { const n = new Set(p); if (selStory.goal!.steps.find(s => s.sceneId === sid)) n.add(sid); return n })
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 200)
-  }, [selectedStory])
+  }, [selStory])
 
-  const applyEffects = useCallback((sceneId: string): StatEffect => {
-    const e = sceneStatEffects[sceneId] || {}
+  const applyFx = useCallback((sid: string): StatEffect => {
+    const e = effects[sid] || {}
     setStats(p => {
       const s = { ...p }
       if (e.hp) s.hp = Math.max(0, Math.min(s.maxHp, s.hp + e.hp))
@@ -293,56 +292,51 @@ export default function InteractiveNovel({ onBack }: Props) {
     return e
   }, [])
 
-  const handleChoice = useCallback((choice: StoryChoice) => {
-    if (!selectedStory || !selectedCharacter) return
-    const vocab = choice.vocabulary || []
-    const effect = applyEffects(choice.nextScene)
-    if (vocab.length > 0 || Object.keys(effect).length > 0) {
-      setVocabData({ vocabulary: vocab, statEffect: effect }); setPendingScene(choice.nextScene); setShowVocab(true)
-    } else {
-      const h = [...history, choice.nextScene]; setHistory(h); goScene(choice.nextScene); save(selectedStory.id, selectedCharacter.id, choice.nextScene, h, stats)
-    }
-  }, [selectedStory, selectedCharacter, history, stats, applyEffects, goScene, save])
+  const pick = useCallback((ch: StoryChoice) => {
+    if (!selStory || !selChar) return
+    const v = ch.vocabulary || [], e = applyFx(ch.nextScene)
+    if (v.length > 0 || Object.keys(e).length > 0) { setVData({ vocab: v, eff: e }); setPendScene(ch.nextScene); setShowVocab(true) }
+    else { const h = [...hist, ch.nextScene]; setHist(h); goTo(ch.nextScene); saveNow(selStory.id, selChar.id, ch.nextScene, h, stats) }
+  }, [selStory, selChar, hist, stats, applyFx, goTo, saveNow])
 
-  const confirmVocab = useCallback(() => {
-    if (!selectedStory || !selectedCharacter || !pendingScene) return
-    const h = [...history, pendingScene]; setHistory(h); goScene(pendingScene); save(selectedStory.id, selectedCharacter.id, pendingScene, h, stats); setShowVocab(false); setPendingScene(null)
-  }, [selectedStory, selectedCharacter, pendingScene, history, stats, goScene, save])
+  const confirmV = useCallback(() => {
+    if (!selStory || !selChar || !pendScene) return
+    const h = [...hist, pendScene]; setHist(h); goTo(pendScene); saveNow(selStory.id, selChar.id, pendScene, h, stats); setShowVocab(false); setPendScene(null)
+  }, [selStory, selChar, pendScene, hist, stats, goTo, saveNow])
 
-  const goBack = useCallback(() => { if (history.length > 1) { const h = history.slice(0, -1); setHistory(h); goScene(h[h.length - 1]) } }, [history, goScene])
+  const back = useCallback(() => { if (hist.length > 1) { const h = hist.slice(0, -1); setHist(h); goTo(h[h.length - 1]) } }, [hist, goTo])
 
   const restart = useCallback(() => {
-    if (!selectedStory || !selectedCharacter) return
-    const s: CharacterStats = { hp: selectedCharacter.baseStats.hp, maxHp: selectedCharacter.baseStats.hp + 20, hunger: selectedCharacter.baseStats.hunger, maxHunger: 100, courage: selectedCharacter.baseStats.courage, maxCourage: 100, gold: selectedCharacter.baseStats.gold, exp: 0, maxExp: 100, level: 1 }
-    setStats(s); setCurrentScene(selectedStory.startScene); setHistory([selectedStory.startScene]); setPhase('playing'); setGameStart(Date.now()); setChoiceStart(Date.now()); setVisitedGoals(new Set()); clearSave()
+    if (!selStory || !selChar) return
+    const s: CharacterStats = { hp: selChar.baseStats.hp, maxHp: selChar.baseStats.hp + 20, hunger: selChar.baseStats.hunger, maxHunger: 100, courage: selChar.baseStats.courage, maxCourage: 100, gold: selChar.baseStats.gold, exp: 0, maxExp: 100, level: 1 }
+    setStats(s); setScene(selStory.startScene); setHist([selStory.startScene]); setPhase('playing'); setGStart(Date.now()); setCStart(Date.now()); setGVisited(new Set()); clearAll()
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [selectedStory, selectedCharacter, clearSave])
+  }, [selStory, selChar, clearAll])
 
-  const goMenu = useCallback(() => { clearSave(); setPhase('select-story'); setSelectedStory(null); setSelectedCharacter(null); setHistory([]); setStats({ hp: 100, maxHp: 100, hunger: 80, maxHunger: 100, courage: 90, maxCourage: 100, gold: 10, exp: 0, maxExp: 100, level: 1 }) }, [clearSave])
+  const goMenu = useCallback(() => {
+    clearAll(); setPhase('select-story'); setSelStory(null); setSelChar(null); setHist([]); setGVisited(new Set())
+    setStats({ hp: 100, maxHp: 100, hunger: 80, maxHunger: 100, courage: 90, maxCourage: 100, gold: 10, exp: 0, maxExp: 100, level: 1 })
+  }, [clearAll])
 
-  // ─── Story Selection ────────────────────────────────────────────────────
-
+  // ═══ STORY SELECT ═══
   if (phase === 'select-story') {
     return (
       <div className="novel-bg">
-        <SparkleBG />
+        <Sparkles_BG />
         <div className="max-w-lg mx-auto p-4 relative z-10">
-          <button onClick={onBack} className="text-[#C5A55A]/50 hover:text-[#C5A55A] flex items-center gap-1 mb-8 text-sm transition-colors"><ArrowLeft size={16} /> กลับ</button>
+          <button onClick={onBack} className="text-[#C5A55A]/40 hover:text-[#C5A55A] flex items-center gap-1 mb-8 text-sm transition-colors"><ArrowLeft size={16} /> กลับ</button>
           <div className="text-center mb-8">
             <span className="text-5xl block mb-3">📖</span>
-            <h1 className="text-3xl font-bold gold-text" style={{ fontFamily: 'Georgia, serif' }}>Interactive Novels</h1>
-            <p className="text-[#C5A55A]/50 text-xs mt-1">เลือกเรื่อง เลือกตัวละคร เปลี่ยนชะตา</p>
+            <h1 className="text-3xl font-bold gold-text-bright" style={{ fontFamily: 'Georgia, serif' }}>Interactive Novels</h1>
+            <p className="text-[#C5A55A]/40 text-xs mt-1">เลือกเรื่อง เลือกตัวละคร เปลี่ยนชะตา</p>
           </div>
           <div className="space-y-4">
-            {stories.map(story => (
-              <button key={story.id} onClick={() => startStory(story)} className="w-full text-left metal-frame p-0 overflow-hidden hover:scale-[0.98] transition-all active:scale-95 group">
-                <div className={cn('p-5 bg-gradient-to-r', story.coverGradient)}>
+            {stories.map(st => (
+              <button key={st.id} onClick={() => { setSelStory(st); setPhase('select-character') }} className="w-full text-left chrome-frame p-0 overflow-hidden hover:scale-[0.98] transition-all active:scale-95 group">
+                <div className={cn('p-5 bg-gradient-to-r', st.coverGradient)}>
                   <div className="flex items-center gap-4">
-                    <span className="text-4xl group-hover:scale-110 transition-transform">{story.emoji}</span>
-                    <div className="flex-1">
-                      <h2 className="text-white font-bold text-lg drop-shadow">{story.title}</h2>
-                      <p className="text-white/80 text-xs">{story.titleTH} · {story.totalScenes} ฉาก · ~{story.estimatedMinutes} นาที</p>
-                    </div>
+                    <span className="text-4xl group-hover:scale-110 transition-transform">{st.emoji}</span>
+                    <div className="flex-1"><h2 className="text-white font-bold text-lg drop-shadow">{st.title}</h2><p className="text-white/80 text-xs">{st.titleTH} · {st.totalScenes} ฉาก</p></div>
                     <ChevronRight size={20} className="text-white/50 group-hover:text-white" />
                   </div>
                 </div>
@@ -354,35 +348,38 @@ export default function InteractiveNovel({ onBack }: Props) {
     )
   }
 
-  // ─── Character Selection ────────────────────────────────────────────────
-
-  if (phase === 'select-character' && selectedStory) {
+  // ═══ CHARACTER SELECT ═══
+  if (phase === 'select-character' && selStory) {
     return (
       <div className="novel-bg">
-        <SparkleBG />
+        <Sparkles_BG />
         <div className="max-w-lg mx-auto p-4 relative z-10">
-          <button onClick={() => setPhase('select-story')} className="text-[#C5A55A]/50 hover:text-[#C5A55A] flex items-center gap-1 mb-6 text-sm transition-colors"><ArrowLeft size={16} /> เลือกเรื่องอื่น</button>
+          <button onClick={() => setPhase('select-story')} className="text-[#C5A55A]/40 hover:text-[#C5A55A] flex items-center gap-1 mb-6 text-sm transition-colors"><ArrowLeft size={16} /> เลือกเรื่องอื่น</button>
           <div className="text-center mb-6">
-            <span className="text-5xl block mb-2">{selectedStory.emoji}</span>
-            <h2 className="text-xl font-bold gold-text" style={{ fontFamily: 'Georgia, serif' }}>{selectedStory.title}</h2>
-            <p className="text-[#C5A55A]/50 text-xs">{selectedStory.titleTH}</p>
+            <span className="text-5xl block mb-2">{selStory.emoji}</span>
+            <h2 className="text-xl font-bold gold-text-bright" style={{ fontFamily: 'Georgia, serif' }}>{selStory.title}</h2>
+            <p className="text-[#C5A55A]/40 text-xs">{selStory.titleTH}</p>
           </div>
-          <p className="text-[#C5A55A]/70 text-sm text-center mb-4 font-medium" style={{ fontFamily: 'Georgia, serif' }}>— เลือกตัวละคร —</p>
+          <p className="text-[#C5A55A]/50 text-sm text-center mb-5" style={{ fontFamily: 'Georgia, serif' }}>— เลือกตัวละคร —</p>
           <div className="grid grid-cols-2 gap-3">
-            {characters.map(char => {
-              const m = getCharacterMood({ hp: char.baseStats.hp, maxHp: char.baseStats.hp + 20, hunger: char.baseStats.hunger, maxHunger: 100, courage: char.baseStats.courage, maxCourage: 100, gold: char.baseStats.gold, exp: 0, maxExp: 100, level: 1 })
+            {characters.map(ch => {
+              const m = getMood({ hp: ch.baseStats.hp, maxHp: ch.baseStats.hp + 20, hunger: ch.baseStats.hunger, maxHunger: 100, courage: ch.baseStats.courage, maxCourage: 100, gold: ch.baseStats.gold, exp: 0, maxExp: 100, level: 1 })
               return (
-                <button key={char.id} onClick={() => selectChar(char)} className="metal-frame p-4 text-left hover:scale-[0.98] transition-all active:scale-95 group">
+                <button key={ch.id} onClick={() => {
+                  setSelChar(ch); const s: CharacterStats = { hp: ch.baseStats.hp, maxHp: ch.baseStats.hp + 20, hunger: ch.baseStats.hunger, maxHunger: 100, courage: ch.baseStats.courage, maxCourage: 100, gold: ch.baseStats.gold, exp: 0, maxExp: 100, level: 1 }
+                  setStats(s); setScene(selStory.startScene); setHist([selStory.startScene]); setPhase('playing'); setGStart(Date.now()); setCStart(Date.now()); setGVisited(new Set()); clearAll()
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }} className="chrome-frame p-4 text-left hover:scale-[0.98] transition-all active:scale-95 group">
                   <div className="text-center mb-2">
-                    <Avatar characterId={char.id} image={charImages[char.id]} size="text-4xl" />
-                    <span className="text-lg block">{m.emoji}</span>
+                    {charImgs[ch.id] ? <img src={charImgs[ch.id]} alt="" className="w-12 h-12 rounded-full object-cover mx-auto ring-2 ring-[#C5A55A]/30" /> : <span className="text-4xl block">{ch.emoji}</span>}
+                    <span className="text-lg block">{m.e}</span>
                   </div>
-                  <h3 className="text-[#C5A55A] font-bold text-sm text-center">{char.name}</h3>
-                  <p className="text-[#C5A55A]/50 text-[10px] text-center mt-0.5">{char.descriptionTH}</p>
+                  <h3 className="gold-text-bright font-bold text-sm text-center">{ch.name}</h3>
+                  <p className="text-[#C5A55A]/40 text-[10px] text-center mt-0.5">{ch.descriptionTH}</p>
                   <div className="mt-2 space-y-1">
-                    <div className="flex justify-between text-[10px]"><span className="text-[#C5A55A]/50">❤️ HP</span><span className="text-[#C5A55A]">{char.baseStats.hp}</span></div>
-                    <div className="flex justify-between text-[10px]"><span className="text-[#C5A55A]/50">💪 ใจ</span><span className="text-[#C5A55A]">{char.baseStats.courage}</span></div>
-                    <div className="flex justify-between text-[10px]"><span className="text-[#C5A55A]/50">💰 Gold</span><span className="text-[#C5A55A]">{char.baseStats.gold}</span></div>
+                    <div className="flex justify-between text-[10px]"><span className="text-[#C5A55A]/40">❤️ HP</span><span className="text-[#C5A55A]">{ch.baseStats.hp}</span></div>
+                    <div className="flex justify-between text-[10px]"><span className="text-[#C5A55A]/40">💪 ใจ</span><span className="text-[#C5A55A]">{ch.baseStats.courage}</span></div>
+                    <div className="flex justify-between text-[10px]"><span className="text-[#C5A55A]/40">💰 Gold</span><span className="text-[#C5A55A]">{ch.baseStats.gold}</span></div>
                   </div>
                 </button>
               )
@@ -393,89 +390,86 @@ export default function InteractiveNovel({ onBack }: Props) {
     )
   }
 
-  // ─── Playing / Ending ───────────────────────────────────────────────────
+  // ═══ PLAYING / ENDING ═══
+  if ((phase === 'playing' || phase === 'ending') && selStory && selChar) {
+    const sc = selStory.scenes[scene]
+    if (!sc) return null
+    const img = charImgs[selChar.id]
+    const m = getMood(stats)
 
-  if ((phase === 'playing' || phase === 'ending') && selectedStory && selectedCharacter) {
-    const scene = selectedStory.scenes[currentScene]
-    if (!scene) return null
-
-    const img = charImages[selectedCharacter.id]
-
-    // Ending
-    if (scene.isEnding) {
+    // ─── ENDING ──────────────────────────────────────────────────────────
+    if (sc.isEnding) {
       return (
         <div className="novel-bg">
-          <SparkleBG />
+          <Sparkles_BG />
           <div className="max-w-lg mx-auto p-4 relative z-10">
-            <div className="metal-frame p-0 overflow-hidden mb-6">
-              <div className="p-8 text-center" style={{ background: 'linear-gradient(135deg, rgba(197,165,90,0.2), rgba(30,20,50,0.8), rgba(197,165,90,0.15))' }}>
-                <Avatar characterId={selectedCharacter.id} image={img} size="text-5xl" />
-                <span className="text-5xl block my-3">{scene.illustration || '🌟'}</span>
-                <h2 className="text-2xl font-bold gold-text" style={{ fontFamily: 'Georgia, serif' }}>{scene.endingType === 'good' ? 'จบสวย! 🎉' : 'จบเรื่อง'}</h2>
+            <div className="chrome-frame p-0 overflow-hidden mb-6">
+              <div className="p-8 text-center" style={{ background: 'linear-gradient(135deg, rgba(197,165,90,0.15), rgba(40,30,20,0.95), rgba(197,165,90,0.1))' }}>
+                {img ? <img src={img} alt="" className="w-16 h-16 rounded-full object-cover mx-auto ring-3 ring-[#C5A55A]/40 mb-2" /> : <span className="text-5xl block mb-2">{ce(selChar.id)}</span>}
+                <span className="text-5xl block my-3">{sc.illustration || '🌟'}</span>
+                <h2 className="text-2xl font-bold gold-text-bright" style={{ fontFamily: 'Georgia, serif' }}>{sc.endingType === 'good' ? 'จบสวย! 🎉' : 'จบเรื่อง'}</h2>
               </div>
             </div>
             <div className="parchment p-5 mb-4">
-              {renderBilingual(scene.contentTH, scene.content)}
+              <div className="parchment-edge-top" />
+              {renderText(sc.contentTH, sc.content)}
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <WoodPanel stats={stats} charId={selectedCharacter.id} image={img} />
+              <WoodPanel stats={stats} cid={selChar.id} img={img} />
               <div className="wood-panel p-4">
-                <h3 className="text-[#C5A55A] font-bold text-sm mb-3" style={{ fontFamily: 'Georgia, serif' }}>📊 สรุป</h3>
+                <h3 className="gold-text-bright font-bold text-sm mb-3" style={{ fontFamily: 'Georgia, serif' }}>📊 สรุป</h3>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between"><span className="text-[#C5A55A]/50">ตัวละคร</span><span className="text-[#C5A55A]">{selectedCharacter.name}</span></div>
-                  <div className="flex justify-between"><span className="text-[#C5A55A]/50">ฉาก</span><span className="text-[#C5A55A]">{history.length}/{selectedStory.totalScenes}</span></div>
-                  <div className="flex justify-between"><span className="text-[#C5A55A]/50">Level</span><span className="text-[#C5A55A]">Lv.{stats.level}</span></div>
-                  <div className="flex justify-between"><span className="text-[#C5A55A]/50">Gold</span><span className="text-[#C5A55A]">{stats.gold}</span></div>
-                  <div className="flex justify-between"><span className="text-[#C5A55A]/50">⏱️ เวลา</span><span className="text-[#C5A55A] font-mono">{fmt(now - gameStart)}</span></div>
-                  {selectedStory.goal && <div className="flex justify-between"><span className="text-[#C5A55A]/50">{selectedStory.goal.icon} เป้าหมาย</span><span className={cn('font-medium', visitedGoals.size >= selectedStory.goal.steps.length ? 'text-green-400' : 'text-[#C5A55A]')}>{visitedGoals.size}/{selectedStory.goal.steps.length}</span></div>}
+                  <div className="flex justify-between"><span className="text-[#C5A55A]/40">ตัวละคร</span><span className="text-[#C5A55A]">{selChar.name}</span></div>
+                  <div className="flex justify-between"><span className="text-[#C5A55A]/40">ฉาก</span><span className="text-[#C5A55A]">{hist.length}/{selStory.totalScenes}</span></div>
+                  <div className="flex justify-between"><span className="text-[#C5A55A]/40">Level</span><span className="gold-text-bright">Lv.{stats.level}</span></div>
+                  <div className="flex justify-between"><span className="text-[#C5A55A]/40">Gold</span><span className="text-[#C5A55A]">{stats.gold}</span></div>
+                  <div className="flex justify-between"><span className="text-[#C5A55A]/40">⏱️ เวลา</span><span className="text-[#C5A55A] font-mono">{fmt(now - gStart)}</span></div>
+                  {selStory.goal && <div className="flex justify-between"><span className="text-[#C5A55A]/40">{selStory.goal.icon} เป้าหมาย</span><span className={cn('font-bold', gVisited.size >= selStory.goal.steps.length ? 'text-green-400' : 'text-[#C5A55A]')}>{gVisited.size}/{selStory.goal.steps.length}</span></div>}
                 </div>
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={goMenu} className="flex-1 py-3 rounded-xl text-[#C5A55A]/70 text-sm font-medium border border-[#C5A55A]/20 bg-[#C5A55A]/5 hover:bg-[#C5A55A]/10 transition-all">เรื่องใหม่</button>
-              <button onClick={restart} className="flex-1 py-3 rounded-xl gold-text text-sm font-bold border border-[#C5A55A]/40 bg-[#C5A55A]/15 hover:bg-[#C5A55A]/25 transition-all">เล่นอีกครั้ง ✨</button>
+              <button onClick={goMenu} className="flex-1 py-3 rounded-xl text-[#C5A55A]/60 text-sm font-medium border border-[#C5A55A]/20 bg-[#C5A55A]/5 hover:bg-[#C5A55A]/10 transition-all">เรื่องใหม่</button>
+              <button onClick={restart} className="flex-1 py-3 rounded-xl gold-text-bright text-sm font-bold border border-[#C5A55A]/40 bg-[#C5A55A]/15 hover:bg-[#C5A55A]/25 transition-all">เล่นอีกครั้ง ✨</button>
             </div>
           </div>
         </div>
       )
     }
 
-    // Normal scene
-    const chapterNum = history.length
-    const illustrationBg = scene.illustration ? (sceneIllustrations[scene.illustration] || 'linear-gradient(135deg, #2d1b4e 0%, #4a2c6e 100%)') : 'linear-gradient(135deg, #2d1b4e 0%, #4a2c6e 100%)'
-    const choiceLabels = ['A', 'B', 'C', 'D']
-    const mood = getCharacterMood(stats)
+    // ─── NORMAL SCENE ────────────────────────────────────────────────────
+    const ch = hist.length
+    const bg = sc.illustration ? (illBg[sc.illustration] || 'linear-gradient(135deg, #2a2520 0%, #3a3020 100%)') : 'linear-gradient(135deg, #2a2520 0%, #3a3020 100%)'
+    const labels = ['A', 'B', 'C', 'D']
 
     return (
       <div className="novel-bg">
-        <SparkleBG />
+        <Sparkles_BG />
         <div className="max-w-lg mx-auto p-4 relative z-10">
-          {showVocab && <VocabPopup vocabulary={vocabData.vocabulary} statEffect={vocabData.statEffect} onClose={confirmVocab} />}
+          {showVocab && <VocabPopup vocab={vData.vocab} eff={vData.eff} onClose={confirmV} />}
 
-          {/* Header */}
+          {/* ─── Header ─── */}
           <div className="flex items-center justify-between mb-3">
-            <button onClick={history.length > 1 ? goBack : goMenu} className="text-[#C5A55A]/50 hover:text-[#C5A55A] flex items-center gap-1 text-sm transition-colors"><ArrowLeft size={16} /> {history.length > 1 ? 'กลับ' : 'ออก'}</button>
+            <button onClick={hist.length > 1 ? back : goMenu} className="text-[#C5A55A]/40 hover:text-[#C5A55A] flex items-center gap-1 text-sm transition-colors"><ArrowLeft size={16} /> {hist.length > 1 ? 'กลับ' : 'ออก'}</button>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-[#C5A55A]/40 font-mono bg-[#C5A55A]/10 px-2 py-1 rounded-full border border-[#C5A55A]/20">⏱ {fmt(now - gameStart)}</span>
-              <span className="text-[10px] gold-text font-mono bg-[#C5A55A]/15 px-2 py-1 rounded-full border border-[#C5A55A]/30">🔀 {fmt(now - choiceStart)}</span>
-              <span className="text-[10px] text-[#C5A55A]/40">{chapterNum}/{selectedStory.totalScenes}</span>
+              <span className="timer-pill text-[10px] text-[#C5A55A]/40 font-mono px-2 py-1 rounded-full">⏱ {fmt(now - gStart)}</span>
+              <span className="timer-pill-active text-[10px] gold-text font-mono px-2 py-1 rounded-full">🔀 {fmt(now - cStart)}</span>
+              <span className="text-[10px] text-[#C5A55A]/30">{ch}/{selStory.totalScenes}</span>
             </div>
           </div>
 
-          {/* Goal Progress */}
-          {selectedStory.goal && (
-            <div className="metal-frame p-3 mb-3">
+          {/* ─── Goal ─── */}
+          {selStory.goal && (
+            <div className="chrome-frame p-3 mb-3">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] text-[#C5A55A]/60 flex items-center gap-1">{selectedStory.goal.icon} {selectedStory.goal.titleTH}</span>
-                <span className="text-[10px] gold-text font-bold">{visitedGoals.size}/{selectedStory.goal.steps.length}</span>
+                <span className="text-[10px] text-[#C5A55A]/50 flex items-center gap-1">{selStory.goal.icon} {selStory.goal.titleTH}</span>
+                <span className="text-[10px] gold-text font-bold">{gVisited.size}/{selStory.goal.steps.length}</span>
               </div>
-              <div className="w-full h-1.5 bg-black/30 rounded-full overflow-hidden mb-1.5">
-                <div className="h-full bg-gradient-to-r from-[#C5A55A] to-[#f1c40f] rounded-full transition-all duration-500" style={{ width: `${(visitedGoals.size / selectedStory.goal.steps.length) * 100}%` }} />
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {selectedStory.goal.steps.map(step => (
-                  <span key={step.sceneId} className={cn('text-[9px] px-1.5 py-0.5 rounded-full border', visitedGoals.has(step.sceneId) ? 'bg-[#C5A55A]/20 text-[#C5A55A] border-[#C5A55A]/40' : 'bg-black/10 text-[#C5A55A]/30 border-[#C5A55A]/10')}>
-                    {visitedGoals.has(step.sceneId) ? '✓' : '○'} {step.labelTH}
+              <div className="goal-bar-track"><div className="goal-bar-fill" style={{ width: `${(gVisited.size / selStory.goal.steps.length) * 100}%` }} /></div>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {selStory.goal.steps.map(st => (
+                  <span key={st.sceneId} className={cn('text-[9px] px-1.5 py-0.5 rounded-full border', gVisited.has(st.sceneId) ? 'bg-[#C5A55A]/20 text-[#C5A55A] border-[#C5A55A]/40' : 'bg-black/10 text-[#C5A55A]/25 border-[#C5A55A]/10')}>
+                    {gVisited.has(st.sceneId) ? '✓' : '○'} {st.labelTH}
                   </span>
                 ))}
               </div>
@@ -483,54 +477,71 @@ export default function InteractiveNovel({ onBack }: Props) {
           )}
 
           <div className="flex gap-4">
-            <div className="flex-1 min-w-0" ref={contentRef}>
-              {/* Scene Frame */}
-              <div className={cn('scene-frame h-48 flex items-center justify-center relative transition-opacity duration-200', sceneTransition ? 'opacity-0' : 'opacity-100')} style={{ background: illustrationBg }}>
-                <span className="text-6xl">{scene.illustration || '🌙'}</span>
-                <div className="absolute bottom-3 left-3 flex items-end gap-2 metal-frame px-3 py-2">
-                  <Avatar characterId={selectedCharacter.id} image={img} size="text-4xl" />
-                  <span className="text-xl">{mood.emoji}</span>
+            <div className="flex-1 min-w-0" ref={ref}>
+
+              {/* ─── Chrome Scene Frame ─── */}
+              <div className={cn('chrome-frame h-52 flex items-center justify-center relative transition-opacity duration-200', trans ? 'opacity-0' : 'opacity-100')} style={{ background: bg }}>
+                {/* Inner sparkles */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {Array.from({ length: 8 }, (_, i) => (
+                    <div key={i} className="sparkle sparkle-gold" style={{
+                      left: `${10 + Math.random() * 80}%`, bottom: `${Math.random() * 30}%`,
+                      width: `${2 + Math.random() * 3}px`, height: `${2 + Math.random() * 3}px`,
+                      animation: `sparkle-up ${4 + Math.random() * 4}s linear ${Math.random() * 3}s infinite`,
+                    }} />
+                  ))}
                 </div>
-                <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold gold-text bg-black/40 backdrop-blur border border-[#C5A55A]/30">
-                  {mood.label}
+
+                {/* Glass dome character */}
+                <div className="absolute bottom-3 left-4">
+                  <GlassDome emoji={ce(selChar.id)} moodEmoji={m.e} image={img} />
+                </div>
+
+                {/* Illustration */}
+                <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f39c12, #e67e22, #e74c3c)' }}>
+                  <span className="text-4xl">{sc.illustration || '🌙'}</span>
+                </div>
+
+                {/* Mood Badge */}
+                <div className="mood-badge absolute top-3 right-3 px-3 py-1 rounded-full text-[11px] font-bold backdrop-blur-sm">
+                  {m.l}
                 </div>
               </div>
 
-              {/* Chapter Divider */}
-              {scene.title && (
-                <div className="chapter-divider">
-                  <span className="text-[#C5A55A] font-bold text-sm whitespace-nowrap" style={{ fontFamily: 'Georgia, serif' }}>§ {scene.title}</span>
+              {/* ─── Chapter Title ─── */}
+              {sc.title && (
+                <div className="chapter-divider mt-4 mb-2">
+                  <span className="gold-text-bright font-bold text-[15px] whitespace-nowrap" style={{ fontFamily: 'Georgia, serif' }}>§ {sc.title}</span>
                 </div>
               )}
 
-              {/* Parchment Text */}
-              <div className="parchment p-5 mb-4">
-                {renderBilingual(scene.contentTH, scene.content)}
+              {/* ─── Parchment Text ─── */}
+              <div className="parchment p-5 mb-1">
+                <div className="parchment-edge-top" />
+                {renderText(sc.contentTH, sc.content)}
               </div>
 
-              {/* Choices */}
-              {scene.choices && scene.choices.length > 0 && (
-                <div className="space-y-3">
-                  <p className="text-[#C5A55A]/50 text-xs text-center" style={{ fontFamily: 'Georgia, serif' }}>— เลือกทางของคุณ —</p>
-                  {scene.choices.map((choice, i) => (
-                    <button key={i} onClick={() => handleChoice(choice)} className="choice-btn w-full text-left p-4 group">
+              {/* ─── "เลือกทางของคุณ" ─── */}
+              <p className="text-[11px] text-[#40e0d0]/60 text-center my-3" style={{ fontFamily: 'Georgia, serif', textShadow: '0 0 8px rgba(64,224,208,0.3)' }}>เลือกทางของคุณ</p>
+
+              {/* ─── Choice Buttons ─── */}
+              {sc.choices && sc.choices.length > 0 && (
+                <div className="space-y-3 mb-4">
+                  {sc.choices.map((ch2, i) => (
+                    <button key={i} onClick={() => pick(ch2)} className="choice-btn w-full text-left p-4 group">
                       <div className="flex items-start gap-3 relative z-10">
-                        <span className="gold-text font-bold text-sm w-5 shrink-0 pt-0.5" style={{ fontFamily: 'Georgia, serif' }}>{choiceLabels[i]}</span>
+                        <span className="gold-text font-bold text-sm w-5 shrink-0 pt-0.5" style={{ fontFamily: 'Georgia, serif' }}>{labels[i]}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[#C5A55A] text-sm font-medium">{choice.text}</div>
-                          <div className="text-[#C5A55A]/50 text-xs mt-0.5">— {choice.textTH}</div>
+                          <div className="text-[#C5A55A] text-sm font-medium">{ch2.text}</div>
+                          <div className="text-[#C5A55A]/40 text-xs mt-0.5">— {ch2.textTH}</div>
                         </div>
-                        <ChevronRight size={16} className="text-[#C5A55A]/30 group-hover:text-[#C5A55A] shrink-0 mt-1 transition-colors" />
+                        <ChevronRight size={16} className="text-[#C5A55A]/25 group-hover:text-[#C5A55A] shrink-0 mt-1 transition-colors" />
                       </div>
-                      {choice.vocabulary && choice.vocabulary.length > 0 && (
+                      {ch2.vocabulary && ch2.vocabulary.length > 0 && (
                         <div className="flex gap-1 mt-2 ml-8 relative z-10">
-                          <span className="text-[10px] bg-[#3498db]/20 text-[#3498db] px-2 py-0.5 rounded-full border border-[#3498db]/30 flex items-center gap-1">
-                            <BookOpen size={10} /> {choice.vocabulary.length} คำ
-                          </span>
-                          {choice.statEffect && Object.keys(choice.statEffect).length > 0 && (
-                            <span className="text-[10px] bg-[#2ecc71]/20 text-[#2ecc71] px-2 py-0.5 rounded-full border border-[#2ecc71]/30 flex items-center gap-1">
-                              <Sparkles size={10} /> stats
-                            </span>
+                          <span className="text-[10px] bg-[#3498db]/20 text-[#5dade2] px-2 py-0.5 rounded-full border border-[#3498db]/30 flex items-center gap-1"><BookOpen size={10} /> {ch2.vocabulary.length} คำ</span>
+                          {ch2.statEffect && Object.keys(ch2.statEffect).length > 0 && (
+                            <span className="text-[10px] bg-[#2ecc71]/20 text-[#58d68d] px-2 py-0.5 rounded-full border border-[#2ecc71]/30 flex items-center gap-1"><Sparkles size={10} /> stats</span>
                           )}
                         </div>
                       )}
@@ -540,15 +551,15 @@ export default function InteractiveNovel({ onBack }: Props) {
               )}
             </div>
 
-            {/* Sidebar Panel */}
+            {/* ─── Sidebar Panel ─── */}
             <div className="w-44 shrink-0 hidden sm:block">
-              <div className="sticky top-4"><WoodPanel stats={stats} charId={selectedCharacter.id} image={img} /></div>
+              <div className="sticky top-4"><WoodPanel stats={stats} cid={selChar.id} img={img} /></div>
             </div>
           </div>
 
-          {/* Mobile Bottom */}
-          <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-[#1a0f2e]/95 backdrop-blur border-t border-[#C5A55A]/20 p-3 z-40">
-            <div className="max-w-lg mx-auto"><WoodPanel stats={stats} charId={selectedCharacter.id} image={img} compact /></div>
+          {/* ─── Mobile Bottom ─── */}
+          <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 z-40" style={{ background: 'linear-gradient(180deg, transparent, rgba(30,25,18,0.98) 30%)' }}>
+            <div className="max-w-lg mx-auto pt-4"><WoodPanel stats={stats} cid={selChar.id} img={img} compact /></div>
           </div>
         </div>
       </div>
@@ -556,13 +567,4 @@ export default function InteractiveNovel({ onBack }: Props) {
   }
 
   return null
-}
-
-function renderBilingual(th: string, en: string) {
-  return (
-    <>
-      {th.split('\n\n').map((p, i) => <p key={`t${i}`} className="text-[#3a2010] text-sm leading-relaxed my-2" style={{ fontFamily: 'Georgia, serif' }}>{p}</p>)}
-      {en.split('\n\n').map((p, i) => <p key={`e${i}`} className="text-[#5a4020]/60 text-sm leading-relaxed my-2 italic" style={{ fontFamily: 'Georgia, serif' }}>{p}</p>)}
-    </>
-  )
 }
