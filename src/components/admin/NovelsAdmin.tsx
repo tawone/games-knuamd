@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { stories, type Story, type StoryScene, type StoryChoice } from '@/data/stories'
+import { stories, characters, type Story, type StoryScene, type StoryChoice } from '@/data/stories'
 import { ArrowLeft, Plus, Trash2, ChevronDown, ChevronRight, BookOpen, Layers, MessageSquare, Save, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 interface Props { onBack: () => void }
 
-type View = 'list' | 'story' | 'scene'
+type View = 'list' | 'story' | 'scene' | 'characters'
 
 const moodOptions = [
   { value: 'calm', label: '🌊 เงียบสงบ' },
@@ -27,6 +27,9 @@ export default function NovelsAdmin({ onBack }: Props) {
   const [editScene, setEditScene] = useState<StoryScene | null>(null)
   const [expandedScenes, setExpandedScenes] = useState<Set<string>>(new Set())
 
+  const [charImages, setCharImages] = useState<Record<string, string>>(() => {
+    try { return JSON.parse(localStorage.getItem('knuamd-char-images') || '{}') } catch { return {} }
+  })
   const selectedStory = allStories.find(s => s.id === selectedStoryId) || null
   const selectedScene = selectedStory?.scenes[selectedSceneId || ''] || null
 
@@ -166,6 +169,78 @@ export default function NovelsAdmin({ onBack }: Props) {
     </div>
   )
 
+  // ========== CHARACTER IMAGES ==========
+  const handleCharacterImageUpload = (charId: string, file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string
+      const updated = { ...charImages, [charId]: dataUrl }
+      setCharImages(updated)
+      localStorage.setItem('knuamd-char-images', JSON.stringify(updated))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const removeCharacterImage = (charId: string) => {
+    const updated = { ...charImages }
+    delete updated[charId]
+    setCharImages(updated)
+    localStorage.setItem('knuamd-char-images', JSON.stringify(updated))
+  }
+
+  if (view === 'characters') {
+    return (
+      <div className="min-h-screen bg-[#FDF6EE]">
+        <div className="max-w-2xl mx-auto p-4">
+          <button onClick={() => setView('list')} className="text-gray-400 hover:text-gray-600 text-sm mb-4 inline-flex items-center gap-1">
+            <ArrowLeft size={16} /> กลับไปรายการ
+          </button>
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">🧑‍🎨 จัดการตัวละคร</h1>
+          <p className="text-gray-400 text-xs mb-6">อัพโหลดภาพตัวละคร (เก็บในเบราว์เซอร์)</p>
+          <div className="space-y-4">
+            {characters.map(char => (
+              <div key={char.id} className="bg-white rounded-2xl border border-orange-100 shadow-sm p-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0">
+                    {charImages[char.id] ? (
+                      <img src={charImages[char.id]} alt={char.name} className="w-16 h-16 rounded-full object-cover border-2 border-[#E8734A]" />
+                    ) : (
+                      <span className="text-5xl">{char.emoji}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-gray-800 font-bold">{char.name}</h3>
+                    <p className="text-gray-400 text-xs">{char.descriptionTH}</p>
+                    <div className="flex gap-2 mt-2">
+                      <label className="cursor-pointer text-[10px] bg-[#E8734A] text-white px-3 py-1 rounded-lg hover:bg-[#D4622E] transition-colors">
+                        {charImages[char.id] ? 'เปลี่ยนภาพ' : 'อัพโหลดภาพ'}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (file) handleCharacterImageUpload(char.id, file)
+                        }} />
+                      </label>
+                      {charImages[char.id] && (
+                        <button onClick={() => removeCharacterImage(char.id)} className="text-[10px] bg-red-50 text-red-500 px-3 py-1 rounded-lg hover:bg-red-100 border border-red-100">
+                          ลบภาพ
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {charImages[char.id] && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <img src={charImages[char.id]} alt={`${char.name} preview`} className="w-full h-24 object-cover rounded-xl" />
+                    <p className="text-[10px] text-gray-400 mt-1 text-center">ตัวอย่างภาพที่จะแสดงในเกม</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // ========== STORY LIST ==========
   if (view === 'list') {
     return (
@@ -180,6 +255,9 @@ export default function NovelsAdmin({ onBack }: Props) {
               <p className="text-gray-400 text-xs">จัดการเรื่อง ฉาก และทางเลือก</p>
             </div>
           </div>
+            <button onClick={() => setView('characters')} className="px-3 py-2 bg-purple-100 text-purple-700 text-xs font-bold rounded-xl hover:bg-purple-200 transition-colors">
+              🧑‍🎨 ตัวละคร
+            </button>
 
           <div className="space-y-3">
             {allStories.map(story => {

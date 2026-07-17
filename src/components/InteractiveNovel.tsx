@@ -21,6 +21,7 @@ interface CharacterStats {
 type GamePhase = 'select-story' | 'select-character' | 'playing' | 'ending'
 
 const SAVE_KEY = 'knuamd-novel-save'
+const CHAR_IMAGES_KEY = 'knuamd-char-images'
 
 // ─── Character Mood System ───────────────────────────────────────────────────
 
@@ -43,6 +44,24 @@ function getCharacterMood(stats: CharacterStats): { emoji: string; label: string
 
 function getCharacterBaseEmoji(characterId: string): string {
   return characters.find(c => c.id === characterId)?.emoji || '🧑'
+}
+
+function loadCharacterImages(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(CHAR_IMAGES_KEY) || '{}')
+  } catch { return {} }
+}
+
+function getCharacterImage(characterId: string): string | null {
+  const images = loadCharacterImages()
+  return images[characterId] || null
+}
+
+function formatTimer(ms: number): string {
+  const totalSec = Math.floor(ms / 1000)
+  const min = Math.floor(totalSec / 60)
+  const sec = totalSec % 60
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
 }
 
 // ─── Stat Effects (Scene-based instead of keyword hack) ───────────────────────
@@ -136,17 +155,24 @@ function StatBar({ icon, label, value, max, color }: { icon: string; label: stri
   )
 }
 
-function CharacterPanel({ stats, characterId, showMood = true, compact = false }: { stats: CharacterStats; characterId: string; showMood?: boolean; compact?: boolean }) {
+function CharacterPanel({ stats, characterId, showMood = true, compact = false, charImage }: { stats: CharacterStats; characterId: string; showMood?: boolean; compact?: boolean; charImage?: string | null }) {
   const mood = getCharacterMood(stats)
   const baseEmoji = getCharacterBaseEmoji(characterId)
   const charName = characters.find(c => c.id === characterId)?.name || 'Hero'
+
+  const renderAvatar = (size: string, moodSize?: string) => {
+    if (charImage) {
+      return <img src={charImage} alt={charName} className={cn(size, 'rounded-full object-cover')} />
+    }
+    return <span className={size}>{baseEmoji}</span>
+  }
 
   if (compact) {
     return (
       <div className="bg-white rounded-2xl p-3 border border-orange-100 shadow-sm">
         <div className="flex items-center gap-3 mb-2">
           <div className="relative">
-            <span className="text-5xl block">{baseEmoji}</span>
+            {renderAvatar('text-5xl block')}
             <span className="absolute -bottom-1 -right-1 text-lg">{mood.emoji}</span>
           </div>
           <div className="flex-1">
@@ -172,7 +198,7 @@ function CharacterPanel({ stats, characterId, showMood = true, compact = false }
     <div className="bg-white rounded-2xl p-4 border border-orange-100 shadow-sm">
       <div className="text-center mb-3">
         <div className="relative inline-block">
-          <span className="text-5xl block">{baseEmoji}</span>
+          {renderAvatar('text-5xl block')}
           {showMood && (
             <span className="absolute -bottom-2 -right-2 text-2xl bg-white rounded-full shadow-sm">{mood.emoji}</span>
           )}
@@ -286,7 +312,16 @@ export default function InteractiveNovel({ onBack }: Props) {
   const [vocabData, setVocabData] = useState<{ vocabulary: { word: string; meaning: string }[]; statEffect?: StatEffect }>({ vocabulary: [] })
   const [pendingScene, setPendingScene] = useState<string | null>(null)
   const [sceneTransition, setSceneTransition] = useState(false)
+  const [gameStartTime, setGameStartTime] = useState(Date.now())
+  const [choiceStartTime, setChoiceStartTime] = useState(Date.now())
+  const [visitedGoals, setVisitedGoals] = useState<Set<string>>(new Set())
+  const [charImages, setCharImages] = useState<Record<string, string>>({})
   const contentRef = useRef<HTMLDivElement>(null)
+
+  // Load character images from localStorage
+  useEffect(() => {
+    setCharImages(loadCharacterImages())
+  }, [])
 
   // ─── localStorage Save/Load ────────────────────────────────────────────────
 
@@ -345,6 +380,9 @@ export default function InteractiveNovel({ onBack }: Props) {
     setCurrentScene(startScene)
     setHistory([startScene])
     setPhase('playing')
+    setGameStartTime(Date.now())
+    setChoiceStartTime(Date.now())
+    setVisitedGoals(new Set())
     clearSave()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [selectedStory, clearSave])
@@ -356,9 +394,19 @@ export default function InteractiveNovel({ onBack }: Props) {
     setTimeout(() => {
       setCurrentScene(sceneId)
       setSceneTransition(false)
+      setChoiceStartTime(Date.now())
+      // Track goal progress
+      if (selectedStory?.goal) {
+        setVisitedGoals(prev => {
+          const next = new Set(prev)
+          const matchStep = selectedStory.goal!.steps.find(s => s.sceneId === sceneId)
+          if (matchStep) next.add(sceneId)
+          return next
+        })
+      }
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 200)
-  }, [])
+  }, [selectedStory])
 
   // ─── Apply Stat Effects (from scene-based data, not keyword hack) ──────────
 
@@ -544,14 +592,18 @@ export default function InteractiveNovel({ onBack }: Props) {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <CharacterPanel stats={stats} characterId={selectedCharacter.id} />
+              <CharacterPanel stats={stats} characterId={selectedCharacter.id} charImage={charImages[selectedCharacter.id]} />
               <div className="bg-white rounded-2xl p-4 border border-orange-100 shadow-sm">
                 <h3 className="text-gray-700 font-bold text-sm mb-3">📊 สรุปการเดินทาง</h3>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between"><span className="text-gray-400">ตัวละคร</span><span className="text-gray-700 font-medium">{selectedCharacter.emoji} {selectedCharacter.name}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">ฉากที่ผ่าน</span><span className="text-gray-700 font-medium">{history.length}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">ตัวละคร</span><span className="text-gray-700 font-medium">{selectedCharacter.name}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">ฉากที่ผ่าน</span><span className="text-gray-700 font-medium">{history.length}/{selectedStory.totalScenes}</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">Level</span><span className="text-[#E8734A] font-medium">Lv.{stats.level}</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">Gold</span><span className="text-[#D4A853] font-medium">{stats.gold}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">⏱️ เวลาทั้งหมด</span><span className="text-gray-700 font-mono font-medium">{formatTimer(Date.now() - gameStartTime)}</span></div>
+                  {selectedStory.goal && (
+                    <div className="flex justify-between"><span className="text-gray-400">{selectedStory.goal.icon} เป้าหมาย</span><span className={cn('font-medium', visitedGoals.size >= selectedStory.goal.steps.length ? 'text-green-500' : 'text-gray-700')}>{visitedGoals.size}/{selectedStory.goal.steps.length} ✓</span></div>
+                  )}
                 </div>
               </div>
             </div>
@@ -587,15 +639,38 @@ export default function InteractiveNovel({ onBack }: Props) {
           )}
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <button onClick={history.length > 1 ? goBack : goToMenu} className="text-gray-400 hover:text-gray-600 flex items-center gap-1 text-sm">
               <ArrowLeft size={16} /> {history.length > 1 ? 'กลับ' : 'ออก'}
             </button>
             <div className="flex items-center gap-3">
-              <button className="text-gray-400 hover:text-gray-600"><Volume2 size={18} /></button>
-              <span className="text-gray-400 text-xs flex items-center gap-1">🗺️ ฉาก {chapterNum}</span>
+              <span className="text-[10px] text-gray-400 font-mono bg-gray-100 px-2 py-1 rounded-full">⏱️ {formatTimer(Date.now() - gameStartTime)}</span>
+              <span className="text-[10px] text-[#E8734A] font-mono bg-[#E8734A]/10 px-2 py-1 rounded-full">🔀 {formatTimer(Date.now() - choiceStartTime)}</span>
+              <span className="text-gray-400 text-xs flex items-center gap-1">🗺️ {chapterNum}/{selectedStory.totalScenes}</span>
             </div>
           </div>
+
+          {/* Goal Progress */}
+          {selectedStory.goal && (
+            <div className="bg-white rounded-xl p-3 border border-orange-100 shadow-sm mb-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] text-gray-400 font-medium flex items-center gap-1">
+                  {selectedStory.goal.icon} {selectedStory.goal.titleTH}
+                </span>
+                <span className="text-[10px] text-[#E8734A] font-bold">{visitedGoals.size}/{selectedStory.goal.steps.length}</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mb-1.5">
+                <div className="h-full bg-gradient-to-r from-[#E8734A] to-[#F6A6C1] rounded-full transition-all duration-500" style={{ width: `${(visitedGoals.size / selectedStory.goal.steps.length) * 100}%` }} />
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {selectedStory.goal.steps.map(step => (
+                  <span key={step.sceneId} className={cn('text-[9px] px-1.5 py-0.5 rounded-full border', visitedGoals.has(step.sceneId) ? 'bg-[#E8734A]/10 text-[#E8734A] border-[#E8734A]/30' : 'bg-gray-50 text-gray-400 border-gray-200')}>
+                    {visitedGoals.has(step.sceneId) ? '✓' : '○'} {step.labelTH}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <p className="text-gray-400 text-xs mb-3">บทที่ {chapterNum}</p>
 
@@ -607,7 +682,11 @@ export default function InteractiveNovel({ onBack }: Props) {
                 <span className="text-6xl">{scene.illustration || '🌙'}</span>
                 {/* Character floating on scene */}
                 <div className="absolute bottom-3 left-3 flex items-end gap-2 bg-white/80 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-md">
-                  <span className="text-4xl">{getCharacterBaseEmoji(selectedCharacter.id)}</span>
+                  {charImages[selectedCharacter.id] ? (
+                    <img src={charImages[selectedCharacter.id]} alt={selectedCharacter.name} className="w-10 h-10 rounded-full object-cover" />
+                  ) : (
+                    <span className="text-4xl">{getCharacterBaseEmoji(selectedCharacter.id)}</span>
+                  )}
                   <span className="text-xl">{mood.emoji}</span>
                 </div>
                 {/* Mood label badge */}
@@ -666,7 +745,7 @@ export default function InteractiveNovel({ onBack }: Props) {
             {/* Character Stats Sidebar (desktop) */}
             <div className="w-44 shrink-0 hidden sm:block">
               <div className="sticky top-4">
-                <CharacterPanel stats={stats} characterId={selectedCharacter.id} />
+                <CharacterPanel stats={stats} characterId={selectedCharacter.id} charImage={charImages[selectedCharacter.id]} />
               </div>
             </div>
           </div>
@@ -674,7 +753,7 @@ export default function InteractiveNovel({ onBack }: Props) {
           {/* Mobile Stats (bottom) */}
           <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-[#FDF6EE]/95 backdrop-blur border-t border-orange-100 p-3 z-40">
             <div className="max-w-lg mx-auto">
-              <CharacterPanel stats={stats} characterId={selectedCharacter.id} compact />
+              <CharacterPanel stats={stats} characterId={selectedCharacter.id} compact charImage={charImages[selectedCharacter.id]} />
             </div>
           </div>
         </div>

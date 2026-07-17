@@ -21,6 +21,7 @@ export interface Character {
   emoji: string
   description: string
   descriptionTH: string
+  imageUrl?: string
   baseStats: {
     hp: number
     hunger: number
@@ -76,6 +77,14 @@ export interface StoryScene {
   endingType?: 'good' | 'bad' | 'neutral'
 }
 
+export interface StoryGoal {
+  title: string
+  titleTH: string
+  icon: string
+  target: number
+  steps: { sceneId: string; label: string; labelTH: string }[]
+}
+
 export interface Story {
   id: string
   title: string
@@ -87,6 +96,7 @@ export interface Story {
   descriptionTH: string
   estimatedMinutes: number
   totalScenes: number
+  goal?: StoryGoal
   scenes: { [key: string]: StoryScene }
   startScene: string
 }
@@ -118,6 +128,18 @@ export const stories: Story[] = [
     descriptionTH: 'เรื่องอบอุ่นเกี่ยวกับการค้นพบร้านกาแฟใหม่',
     estimatedMinutes: 3,
     totalScenes: 8,
+    goal: {
+      title: 'Find Your Perfect Drink',
+      titleTH: 'ค้นหาเครื่องดื่มที่สมบูรณ์แบบ',
+      icon: '☕',
+      target: 4,
+      steps: [
+        { sceneId: 'inside', label: 'Enter the shop', labelTH: 'เข้าร้าน' },
+        { sceneId: 'menu', label: 'Check the menu', labelTH: 'ดูเมนู' },
+        { sceneId: 'recommend', label: 'Ask for recommendation', labelTH: 'ถามแนะนำ' },
+        { sceneId: 'talk', label: 'Chat with barista', labelTH: 'คุยกับพนักงาน' },
+      ],
+    },
     startScene: 'start',
     scenes: {
       start: {
@@ -275,6 +297,17 @@ export const stories: Story[] = [
     descriptionTH: 'สำรวจวัดเก่าลึกลับ',
     estimatedMinutes: 4,
     totalScenes: 8,
+    goal: {
+      title: 'Solve the Temple Mystery',
+      titleTH: 'แก้ปริศนาวัดลึกลับ',
+      icon: '🗝️',
+      target: 3,
+      steps: [
+        { sceneId: 'main-hall', label: 'Enter the temple', labelTH: 'เข้าวัด' },
+        { sceneId: 'paintings', label: 'Find the riddle', labelTH: 'หาปริศนา' },
+        { sceneId: 'secret-room', label: 'Open the secret room', labelTH: 'เปิดห้องลับ' },
+      ],
+    },
     startScene: 'start',
     scenes: {
       start: {
@@ -357,6 +390,17 @@ export const stories: Story[] = [
     descriptionTH: 'วันสนุกที่ตลาดนัดไทย',
     estimatedMinutes: 3,
     totalScenes: 8,
+    goal: {
+      title: 'Buy Dinner Under Budget',
+      titleTH: 'ซื้ออาหารมื้อค่ำภายในงบ',
+      icon: '🛒',
+      target: 3,
+      steps: [
+        { sceneId: 'explore', label: 'Explore market', labelTH: 'สำรวจตลาด' },
+        { sceneId: 'food-area', label: 'Find food', labelTH: 'หาอาหาร' },
+        { sceneId: 'good-deal', label: 'Get a good deal', labelTH: 'ได้ราคาดี' },
+      ],
+    },
     startScene: 'start',
     scenes: {
       start: {
