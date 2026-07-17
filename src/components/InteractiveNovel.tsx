@@ -270,6 +270,8 @@ export default function InteractiveNovel({ onBack }: Props) {
   const [muted, setMuted] = useState(false)
   const [learnedWords, setLearnedWords] = useState<VocabularyWord[]>([])
   const [showVocabBook, setShowVocabBook] = useState(false)
+  const [narrating, setNarrating] = useState(false)
+  const [narratingTH, setNarratingTH] = useState(false)
   const [showQuiz, setShowQuiz] = useState(false)
   const [quizData, setQuizData] = useState<QuizQuestion | null>(null)
   const [pendingChoiceAfterQuiz, setPendingChoiceAfterQuiz] = useState<StoryChoice | null>(null)
@@ -610,9 +612,63 @@ export default function InteractiveNovel({ onBack }: Props) {
             </div>
           )}
 
-          <div className="parchment p-5 mb-1">
+          <div className="parchment p-5 mb-1 relative">
             <div className="parchment-edge-top" />
             {renderText(sc.contentTH, sc.content)}
+            {!sc.isEnding && sc.content && (
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#C5A55A]/15">
+                <button
+                  onClick={() => {
+                    if (window.speechSynthesis?.speaking) {
+                      window.speechSynthesis.cancel()
+                      setNarrating(false)
+                    } else {
+                      const u = new SpeechSynthesisUtterance(sc.content)
+                      u.lang = 'en-US'
+                      u.rate = 0.8
+                      u.pitch = 1
+                      u.addEventListener('end', () => setNarrating(false))
+                      window.speechSynthesis.speak(u)
+                      setNarrating(true)
+                    }
+                  }}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all',
+                    narrating
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/30 animate-pulse'
+                      : 'bg-[#C5A55A]/10 text-[#C5A55A]/60 border border-[#C5A55A]/20 hover:bg-[#C5A55A]/20 hover:text-[#C5A55A]'
+                  )}
+                >
+                  {narrating ? <Volume2 size={12} className="text-green-400" /> : <Volume2 size={12} />}
+                  {narrating ? '🔊 กำลังอ่าน...' : '🎧 Listen'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.speechSynthesis?.speaking) {
+                      window.speechSynthesis.cancel()
+                      setNarratingTH(false)
+                    } else {
+                      const u = new SpeechSynthesisUtterance(sc.contentTH)
+                      u.lang = 'th-TH'
+                      u.rate = 0.85
+                      u.pitch = 1
+                      u.addEventListener('end', () => setNarratingTH(false))
+                      window.speechSynthesis.speak(u)
+                      setNarratingTH(true)
+                    }
+                  }}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all',
+                    narratingTH
+                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 animate-pulse'
+                      : 'bg-[#C5A55A]/10 text-[#C5A55A]/60 border border-[#C5A55A]/20 hover:bg-[#C5A55A]/20 hover:text-[#C5A55A]'
+                  )}
+                >
+                  {narratingTH ? <Volume2 size={12} className="text-blue-400" /> : <Volume2 size={12} />}
+                  {narratingTH ? '🔊 กำลังอ่าน...' : '🇹🇭 ฟังไทย'}
+                </button>
+              </div>
+            )}
           </div>
 
           <p className="text-[11px] text-[#40e0d0]/60 text-center my-3" style={{ fontFamily: 'Georgia, serif', textShadow: '0 0 8px rgba(64,224,208,0.3)' }}>เลือกทางของคุณ</p>
