@@ -13,6 +13,8 @@ interface CharacterStats {
   hp: number; maxHp: number
   hunger: number; maxHunger: number
   courage: number; maxCourage: number
+  knowledge: number; maxKnowledge: number
+  speaking: number; maxSpeaking: number
   gold: number
   exp: number; maxExp: number
   level: number
@@ -153,10 +155,8 @@ function WoodPanel({ stats, cid, img, compact = false }: { stats: CharacterStats
         </div>
         <Bar3D icon="🍖" label="หิว" value={stats.hunger} max={stats.maxHunger} cls="bar-hunger" />
         <Bar3D icon="💪" label="ใจ" value={stats.courage} max={stats.maxCourage} cls="bar-courage" />
-        <div className="flex gap-3 mt-2 pt-2 border-t border-[#C5A55A]/20">
-          <span className="text-[10px] text-[#C5A55A]">💰 {stats.gold}</span>
-          <span className="text-[10px] text-[#C5A55A]/50 ml-auto">⭐ {stats.exp}/{stats.maxExp}</span>
-        </div>
+        <Bar3D icon="📚" label="ความรู้" value={stats.knowledge} max={stats.maxKnowledge} cls="bar-knowledge" />
+        <Bar3D icon="🗣️" label="พูดอังกฤษ" value={stats.speaking} max={stats.maxSpeaking} cls="bar-speaking" />
       </div>
     )
   }
@@ -173,9 +173,9 @@ function WoodPanel({ stats, cid, img, compact = false }: { stats: CharacterStats
       <Bar3D icon="❤️" label="HP" value={stats.hp} max={stats.maxHp} cls="bar-hp" />
       <Bar3D icon="🍖" label="หิว" value={stats.hunger} max={stats.maxHunger} cls="bar-hunger" />
       <Bar3D icon="💪" label="ใจ" value={stats.courage} max={stats.maxCourage} cls="bar-courage" />
-      <div className="mt-2 pt-2 border-t border-[#C5A55A]/20">
-        <Bar3D icon="⭐" label="EXP" value={stats.exp} max={stats.maxExp} cls="bar-exp" />
-      </div>
+      <Bar3D icon="📚" label="ความรู้" value={stats.knowledge} max={stats.maxKnowledge} cls="bar-knowledge" />
+      <Bar3D icon="🗣️" label="พูดอังกฤษ" value={stats.speaking} max={stats.maxSpeaking} cls="bar-speaking" />
+      <Bar3D icon="⭐" label="EXP" value={stats.exp} max={stats.maxExp} cls="bar-exp" />
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#C5A55A]/20">
         <span className="text-sm">💰</span>
         <span className="gold-text-bright font-bold text-sm">{stats.gold} Gold</span>
@@ -188,7 +188,7 @@ function WoodPanel({ stats, cid, img, compact = false }: { stats: CharacterStats
 
 function VocabPopup({ vocab, eff, onClose }: { vocab: VocabularyWord[]; eff?: StatEffect; onClose: () => void }) {
   const e = eff ? Object.entries(eff).filter(([, v]) => v !== 0) : []
-  const lb: Record<string, string> = { hp: '❤️ HP', hunger: '🍖 หิว', courage: '💪 ใจ', gold: '💰 Gold', exp: '⭐ EXP' }
+  const lb: Record<string, string> = { hp: '❤️ HP', hunger: '🍖 หิว', courage: '💪 ใจ', knowledge: '📚 ความรู้', speaking: '🗣️ พูดอังกฤษ', gold: '💰 Gold', exp: '⭐ EXP' }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="chrome-frame p-5 max-w-sm w-full animate-popIn" onClick={ev => ev.stopPropagation()}>
@@ -257,7 +257,7 @@ export default function InteractiveNovel({ onBack }: Props) {
   const [selChar, setSelChar] = useState<Character | null>(null)
   const [scene, setScene] = useState('')
   const [hist, setHist] = useState<string[]>([])
-  const [stats, setStats] = useState<CharacterStats>({ hp: 100, maxHp: 100, hunger: 80, maxHunger: 100, courage: 90, maxCourage: 100, gold: 10, exp: 0, maxExp: 100, level: 1 })
+  const [stats, setStats] = useState<CharacterStats>({ hp: 100, maxHp: 100, hunger: 80, maxHunger: 100, courage: 90, maxCourage: 100, knowledge: 0, maxKnowledge: 100, speaking: 0, maxSpeaking: 100, gold: 10, exp: 0, maxExp: 100, level: 1 })
   const [showVocab, setShowVocab] = useState(false)
   const [vData, setVData] = useState<{ vocab: { word: string; meaning: string }[]; eff?: StatEffect }>({ vocab: [] })
   const [pendScene, setPendScene] = useState<string | null>(null)
@@ -318,6 +318,8 @@ export default function InteractiveNovel({ onBack }: Props) {
       if (e.hunger) s.hunger = Math.max(0, Math.min(s.maxHunger, s.hunger + e.hunger))
       if (e.courage) s.courage = Math.max(0, Math.min(s.maxCourage, s.courage + e.courage))
       if (e.gold) s.gold = Math.max(0, s.gold + e.gold)
+      if (e.knowledge) s.knowledge = Math.max(0, Math.min(s.maxKnowledge, s.knowledge + e.knowledge))
+      if (e.speaking) s.speaking = Math.max(0, Math.min(s.maxSpeaking, s.speaking + e.speaking))
       if (e.exp) { s.exp = Math.min(s.maxExp, s.exp + e.exp); if (s.exp >= s.maxExp) { s.level++; s.exp = 0; s.maxExp = Math.floor(s.maxExp * 1.5); s.maxHp += 10; s.hp = s.maxHp; s.courage = s.maxCourage; s.hunger = s.maxHunger } }
       return s
     })
@@ -333,7 +335,7 @@ export default function InteractiveNovel({ onBack }: Props) {
       setShowQuiz(true)
       return
     }
-    const v = ch.vocabulary || [], e = applyFx(ch.nextScene)
+    const v = ch.vocabulary || [], e = ch.statEffect || applyFx(ch.nextScene)
     if (v.length > 0) {
       setLearnedWords(p => {
         const existing = new Set(p.map(w => w.word))
@@ -366,7 +368,7 @@ export default function InteractiveNovel({ onBack }: Props) {
     setShowQuiz(false)
     if (pendingChoiceAfterQuiz) {
       const ch = pendingChoiceAfterQuiz
-      const v = ch.vocabulary || [], e = applyFx(ch.nextScene)
+      const v = ch.vocabulary || [], e = ch.statEffect || applyFx(ch.nextScene)
       if (v.length > 0) {
         setLearnedWords(p => {
           const existing = new Set(p.map(w => w.word))
@@ -389,14 +391,14 @@ export default function InteractiveNovel({ onBack }: Props) {
 
   const restart = useCallback(() => {
     if (!selStory || !selChar) return
-    const s: CharacterStats = { hp: selChar.baseStats.hp, maxHp: selChar.baseStats.hp + 20, hunger: selChar.baseStats.hunger, maxHunger: 100, courage: selChar.baseStats.courage, maxCourage: 100, gold: selChar.baseStats.gold, exp: 0, maxExp: 100, level: 1 }
+    const s: CharacterStats = { hp: selChar.baseStats.hp, maxHp: selChar.baseStats.hp + 20, hunger: selChar.baseStats.hunger, maxHunger: 100, courage: selChar.baseStats.courage, maxCourage: 100, knowledge: selChar.baseStats.knowledge || 0, maxKnowledge: 100, speaking: selChar.baseStats.speaking || 0, maxSpeaking: 100, gold: selChar.baseStats.gold, exp: 0, maxExp: 100, level: 1 }
     setStats(s); setScene(selStory.startScene); setHist([selStory.startScene]); setPhase('playing'); setGStart(Date.now()); setCStart(Date.now()); setGVisited(new Set()); clearAll()
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [selStory, selChar, clearAll])
 
   const goMenu = useCallback(() => {
     clearAll(); setPhase('select-story'); setSelStory(null); setSelChar(null); setHist([]); setGVisited(new Set())
-    setStats({ hp: 100, maxHp: 100, hunger: 80, maxHunger: 100, courage: 90, maxCourage: 100, gold: 10, exp: 0, maxExp: 100, level: 1 })
+    setStats({ hp: 100, maxHp: 100, hunger: 80, maxHunger: 100, courage: 90, maxCourage: 100, knowledge: 0, maxKnowledge: 100, speaking: 0, maxSpeaking: 100, gold: 10, exp: 0, maxExp: 100, level: 1 })
   }, [clearAll])
 
   // ═══ STORY SELECT ═══
@@ -444,10 +446,10 @@ export default function InteractiveNovel({ onBack }: Props) {
           <p className="text-[#C5A55A]/50 text-sm text-center mb-5" style={{ fontFamily: 'Georgia, serif' }}>— เลือกตัวละคร —</p>
           <div className="grid grid-cols-2 gap-3">
             {characters.map(ch => {
-              const m = getMood({ hp: ch.baseStats.hp, maxHp: ch.baseStats.hp + 20, hunger: ch.baseStats.hunger, maxHunger: 100, courage: ch.baseStats.courage, maxCourage: 100, gold: ch.baseStats.gold, exp: 0, maxExp: 100, level: 1 })
+              const m = getMood({ hp: ch.baseStats.hp, maxHp: ch.baseStats.hp + 20, hunger: ch.baseStats.hunger, maxHunger: 100, courage: ch.baseStats.courage, maxCourage: 100, knowledge: ch.baseStats.knowledge || 0, maxKnowledge: 100, speaking: ch.baseStats.speaking || 0, maxSpeaking: 100, gold: ch.baseStats.gold, exp: 0, maxExp: 100, level: 1 })
               return (
                 <button key={ch.id} onClick={() => {
-                  setSelChar(ch); const s: CharacterStats = { hp: ch.baseStats.hp, maxHp: ch.baseStats.hp + 20, hunger: ch.baseStats.hunger, maxHunger: 100, courage: ch.baseStats.courage, maxCourage: 100, gold: ch.baseStats.gold, exp: 0, maxExp: 100, level: 1 }
+                  setSelChar(ch); const s: CharacterStats = { hp: ch.baseStats.hp, maxHp: ch.baseStats.hp + 20, hunger: ch.baseStats.hunger, maxHunger: 100, courage: ch.baseStats.courage, maxCourage: 100, knowledge: ch.baseStats.knowledge || 0, maxKnowledge: 100, speaking: ch.baseStats.speaking || 0, maxSpeaking: 100, gold: ch.baseStats.gold, exp: 0, maxExp: 100, level: 1 }
                   setStats(s); setScene(selStory.startScene); setHist([selStory.startScene]); setPhase('playing'); setGStart(Date.now()); setCStart(Date.now()); setGVisited(new Set()); clearAll()
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }} className="chrome-frame p-4 text-left hover:scale-[0.98] transition-all active:scale-95 group">
@@ -480,15 +482,25 @@ export default function InteractiveNovel({ onBack }: Props) {
 
     // ─── ENDING ──────────────────────────────────────────────────────────
     if (sc.isEnding) {
+      const isGood = sc.endingType === 'good'
+      const isBad = sc.endingType === 'bad'
+      const endingBg = isGood ? 'linear-gradient(135deg, rgba(34,197,94,0.15), rgba(40,30,20,0.95), rgba(34,197,94,0.1))'
+        : isBad ? 'linear-gradient(135deg, rgba(239,68,68,0.15), rgba(40,30,20,0.95), rgba(239,68,68,0.1))'
+        : 'linear-gradient(135deg, rgba(197,165,90,0.15), rgba(40,30,20,0.95), rgba(197,165,90,0.1))'
       return (
         <div className="novel-bg">
           <Sparkles_BG />
           <div className="max-w-lg mx-auto p-4 relative z-10">
             <div className="chrome-frame p-0 overflow-hidden mb-6">
-              <div className="p-8 text-center" style={{ background: 'linear-gradient(135deg, rgba(197,165,90,0.15), rgba(40,30,20,0.95), rgba(197,165,90,0.1))' }}>
+              <div className="p-8 text-center" style={{ background: endingBg }}>
                 {img ? <img src={img} alt="" className="w-16 h-16 rounded-full object-cover mx-auto ring-3 ring-[#C5A55A]/40 mb-2" /> : <span className="text-5xl block mb-2">{ce(selChar.id)}</span>}
                 <span className="text-5xl block my-3">{sc.illustration || '🌟'}</span>
-                <h2 className="text-2xl font-bold gold-text-bright" style={{ fontFamily: 'Georgia, serif' }}>{sc.endingType === 'good' ? 'จบสวย! 🎉' : 'จบเรื่อง'}</h2>
+                <h2 className={cn('text-2xl font-bold', isGood ? 'text-green-400' : isBad ? 'text-red-400' : 'gold-text-bright')} style={{ fontFamily: 'Georgia, serif' }}>
+                  {isGood ? '🎉 จบสวย!' : isBad ? '😰 จบไม่ดี' : '😊 จบเรื่อง'}
+                </h2>
+                <p className={cn('text-xs mt-1', isGood ? 'text-green-400/60' : isBad ? 'text-red-400/60' : 'text-[#C5A55A]/40')}>
+                  {isGood ? 'คุณเลือกได้ดี! ได้ผลลัพธ์ที่ยอดเยี่ยม!' : isBad ? 'ทางเลือกของคุณนำผลเสียมาให้...' : 'เรื่องจบลง ลองเล่นอีกครั้งเพื่อผลลัพธ์ที่ต่างกัน!'}
+                </p>
               </div>
             </div>
             <div className="parchment p-5 mb-4">
@@ -616,6 +628,11 @@ export default function InteractiveNovel({ onBack }: Props) {
                       <div className="text-[#C5A55A] text-sm font-medium">{ch2.text}</div>
                       <div className="text-[#C5A55A]/40 text-xs mt-0.5">— {ch2.textTH}</div>
                     </div>
+                      {ch2.consequence && (
+                        <div className={cn('text-[10px] mt-1 font-medium', ch2.consequence.startsWith('🌟') || ch2.consequence.startsWith('✅') || ch2.consequence.startsWith('🎉') || ch2.consequence.startsWith('💪') ? 'text-green-400/70' : ch2.consequence.startsWith('❌') || ch2.consequence.startsWith('😰') ? 'text-red-400/70' : 'text-amber-400/60')}>
+                          {ch2.consequence}
+                        </div>
+                      )}
                     <ChevronRight size={16} className="text-[#C5A55A]/25 group-hover:text-[#C5A55A] shrink-0 mt-1 transition-colors" />
                   </div>
                   {ch2.vocabulary && ch2.vocabulary.length > 0 && (

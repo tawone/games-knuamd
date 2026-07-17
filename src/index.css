@@ -447,6 +447,32 @@
   color: #9b7dff;
 }
 
+.bar-knowledge {
+  background: linear-gradient(180deg,
+    #5bc0eb 0%, #4aadd4 15%, #3890b8 35%,
+    #2870a0 55%, #3890b8 75%, #4aadd4 90%, #5bc0eb 100%
+  );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+    0 0 14px rgba(91, 192, 235, 0.5),
+    0 0 28px rgba(91, 192, 235, 0.15);
+  color: #5bc0eb;
+}
+
+.bar-speaking {
+  background: linear-gradient(180deg,
+    #58d68d 0%, #45c47a 15%, #32a868 35%,
+    #228b50 55%, #32a868 75%, #45c47a 90%, #58d68d 100%
+  );
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+    0 0 14px rgba(88, 214, 141, 0.5),
+    0 0 28px rgba(88, 214, 141, 0.15);
+  color: #58d68d;
+}
+
 .bar-exp {
   background: linear-gradient(180deg,
     #f1d98a 0%, #e8c87a 15%, #c5a55a 35%,
