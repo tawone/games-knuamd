@@ -6,11 +6,33 @@ export interface StatEffect {
   exp?: number
 }
 
+export interface VocabularyWord {
+  word: string
+  ipa?: string
+  reading?: string
+  meaning: string
+  meaningEn?: string
+  example?: string
+  exampleTH?: string
+  difficulty?: 1 | 2 | 3
+  category?: 'noun' | 'verb' | 'adjective' | 'adverb' | 'phrase' | 'idiom'
+}
+
+export interface QuizQuestion {
+  question: string
+  questionTH?: string
+  options: string[]
+  correctIndex: number
+  explanation?: string
+  explanationTH?: string
+}
+
 export interface StoryChoice {
   text: string
   textTH: string
   nextScene: string
-  vocabulary?: { word: string; meaning: string }[]
+  vocabulary?: VocabularyWord[]
+  quiz?: QuizQuestion
   consequence?: string
   statEffect?: StatEffect
 }

@@ -1,7 +1,11 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import { stories, characters, type Story, type StoryChoice, type Character, type StatEffect } from '@/data/stories'
-import { ArrowLeft, ChevronRight, X, BookOpen, Sparkles } from 'lucide-react'
+import { stories, characters, type Story, type StoryChoice, type Character, type StatEffect, type VocabularyWord, type QuizQuestion } from '@/data/stories'
+import { ArrowLeft, ChevronRight, X, BookOpen, Sparkles, Volume2, VolumeX, BookMarked } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { gameAudio } from '@/lib/audio'
+import VocabCard, { speakWord, speakSentence } from './VocabCard'
+import Quiz from './Quiz'
+import VocabularyBook from './VocabularyBook'
 
 interface Props { onBack: () => void }
 
@@ -182,12 +186,12 @@ function WoodPanel({ stats, cid, img, compact = false }: { stats: CharacterStats
 
 // ─── Vocabulary Popup ───────────────────────────────────────────────────
 
-function VocabPopup({ vocab, eff, onClose }: { vocab: { word: string; meaning: string }[]; eff?: StatEffect; onClose: () => void }) {
+function VocabPopup({ vocab, eff, onClose }: { vocab: VocabularyWord[]; eff?: StatEffect; onClose: () => void }) {
   const e = eff ? Object.entries(eff).filter(([, v]) => v !== 0) : []
   const lb: Record<string, string> = { hp: '❤️ HP', hunger: '🍖 หิว', courage: '💪 ใจ', gold: '💰 Gold', exp: '⭐ EXP' }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="chrome-frame p-5 max-w-sm w-full" onClick={ev => ev.stopPropagation()}>
+      <div className="chrome-frame p-5 max-w-sm w-full animate-popIn" onClick={ev => ev.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2"><BookOpen size={16} className="gold-text" /><span className="text-sm font-bold gold-text" style={{ fontFamily: 'Georgia, serif' }}>คำศัพท์ใหม่</span></div>
           <button onClick={onClose} className="text-[#C5A55A]/40 hover:text-[#C5A55A] transition-colors"><X size={16} /></button>
@@ -195,10 +199,23 @@ function VocabPopup({ vocab, eff, onClose }: { vocab: { word: string; meaning: s
         {vocab.length > 0 ? (
           <div className="space-y-2 mb-3">
             {vocab.map((v, i) => (
-              <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-[#C5A55A]/10 border border-[#C5A55A]/20">
-                <span className="gold-text-bright font-bold text-sm">{v.word}</span>
-                <span className="text-[#C5A55A]/25">—</span>
-                <span className="text-[#C5A55A]/70 text-sm">{v.meaning}</span>
+              <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[#C5A55A]/10 border border-[#C5A55A]/20 animate-fadeInUp" style={{ animationDelay: `${i * 80}ms` }}>
+                <button onClick={(e) => { e.stopPropagation(); speakWord(v.word) }} className="text-amber-400 hover:text-amber-300 active:scale-90 transition-transform shrink-0">
+                  <Volume2 size={16} />
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="gold-text-bright font-bold text-sm">{v.word}</span>
+                    {v.ipa && <span className="text-[#C5A55A]/40 text-xs font-mono">{v.ipa}</span>}
+                  </div>
+                  {v.reading && <div className="text-amber-400/60 text-[11px]">{v.reading}</div>}
+                  <span className="text-[#C5A55A]/70 text-xs">{v.meaning}</span>
+                </div>
+                {v.example && (
+                  <button onClick={() => speakSentence(v.example!)} className="text-amber-400/40 hover:text-amber-400 transition-colors shrink-0" title="Listen to example">
+                    <Volume2 size={12} />
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -215,7 +232,7 @@ function VocabPopup({ vocab, eff, onClose }: { vocab: { word: string; meaning: s
             </div>
           </div>
         )}
-        <button onClick={onClose} className="w-full py-2.5 rounded-xl font-bold text-sm gold-text border border-[#C5A55A]/30 bg-[#C5A55A]/10 hover:bg-[#C5A55A]/20 transition-all">เข้าใจแล้ว ✨</button>
+        <button onClick={onClose} className="w-full py-2.5 rounded-xl font-bold text-sm gold-text border border-[#C5A55A]/30 bg-[#C5A55A]/10 hover:bg-[#C5A55A]/20 transition-all active:scale-[0.98]">เข้าใจแล้ว ✨</button>
       </div>
     </div>
   )
@@ -250,6 +267,14 @@ export default function InteractiveNovel({ onBack }: Props) {
   const [now, setNow] = useState(Date.now())
   const [gVisited, setGVisited] = useState<Set<string>>(new Set())
   const [charImgs, setCharImgs] = useState<Record<string, string>>({})
+  const [muted, setMuted] = useState(false)
+  const [learnedWords, setLearnedWords] = useState<VocabularyWord[]>([])
+  const [showVocabBook, setShowVocabBook] = useState(false)
+  const [showQuiz, setShowQuiz] = useState(false)
+  const [quizData, setQuizData] = useState<QuizQuestion | null>(null)
+  const [pendingChoiceAfterQuiz, setPendingChoiceAfterQuiz] = useState<StoryChoice | null>(null)
+  const [notifications, setNotifications] = useState<{ id: number; text: string; icon: string }[]>([])
+  const notifIdRef = useRef(0)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => { setCharImgs(loadImg()) }, [])
@@ -270,10 +295,17 @@ export default function InteractiveNovel({ onBack }: Props) {
   }, [])
   const clearAll = useCallback(() => { try { localStorage.removeItem(SAVE_KEY) } catch {} }, [])
 
+  const notif = useCallback((text: string, icon = '✨') => {
+    const id = ++notifIdRef.current
+    setNotifications(p => [...p, { id, text, icon }])
+    setTimeout(() => setNotifications(p => p.filter(n => n.id !== id)), 2500)
+  }, [])
+
   const goTo = useCallback((sid: string) => {
     setTrans(true); setTimeout(() => {
       setScene(sid); setTrans(false); setCStart(Date.now())
       if (selStory?.goal) setGVisited(p => { const n = new Set(p); if (selStory.goal!.steps.find(s => s.sceneId === sid)) n.add(sid); return n })
+      gameAudio.startAmbience(selStory?.scenes[sid]?.mood || 'calm')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }, 200)
   }, [selStory])
@@ -294,15 +326,64 @@ export default function InteractiveNovel({ onBack }: Props) {
 
   const pick = useCallback((ch: StoryChoice) => {
     if (!selStory || !selChar) return
+    gameAudio.playSfx('choose')
+    if (ch.quiz) {
+      setQuizData(ch.quiz)
+      setPendingChoiceAfterQuiz(ch)
+      setShowQuiz(true)
+      return
+    }
     const v = ch.vocabulary || [], e = applyFx(ch.nextScene)
-    if (v.length > 0 || Object.keys(e).length > 0) { setVData({ vocab: v, eff: e }); setPendScene(ch.nextScene); setShowVocab(true) }
-    else { const h = [...hist, ch.nextScene]; setHist(h); goTo(ch.nextScene); saveNow(selStory.id, selChar.id, ch.nextScene, h, stats) }
+    if (v.length > 0) {
+      setLearnedWords(p => {
+        const existing = new Set(p.map(w => w.word))
+        const newWords = v.filter(w => !existing.has(w.word))
+        return newWords.length > 0 ? [...p, ...newWords] : p
+      })
+    }
+    if (v.length > 0 || Object.keys(e).length > 0) {
+      setVData({ vocab: v, eff: e }); setPendScene(ch.nextScene); setShowVocab(true)
+    } else {
+      const h = [...hist, ch.nextScene]; setHist(h); goTo(ch.nextScene); saveNow(selStory.id, selChar.id, ch.nextScene, h, stats)
+    }
   }, [selStory, selChar, hist, stats, applyFx, goTo, saveNow])
 
   const confirmV = useCallback(() => {
     if (!selStory || !selChar || !pendScene) return
     const h = [...hist, pendScene]; setHist(h); goTo(pendScene); saveNow(selStory.id, selChar.id, pendScene, h, stats); setShowVocab(false); setPendScene(null)
   }, [selStory, selChar, pendScene, hist, stats, goTo, saveNow])
+
+  const handleQuizComplete = useCallback((correct: boolean) => {
+    if (correct) {
+      notif('+10 EXP', '📝')
+      setStats(p => {
+        const s = { ...p }
+        s.exp = Math.min(s.maxExp, s.exp + 10)
+        if (s.exp >= s.maxExp) { s.level++; s.exp = 0; s.maxExp = Math.floor(s.maxExp * 1.5) }
+        return s
+      })
+    }
+    setShowQuiz(false)
+    if (pendingChoiceAfterQuiz) {
+      const ch = pendingChoiceAfterQuiz
+      const v = ch.vocabulary || [], e = applyFx(ch.nextScene)
+      if (v.length > 0) {
+        setLearnedWords(p => {
+          const existing = new Set(p.map(w => w.word))
+          const nw = v.filter(w => !existing.has(w.word))
+          return nw.length > 0 ? [...p, ...nw] : p
+        })
+      }
+      if (v.length > 0 || Object.keys(e).length > 0) {
+        setVData({ vocab: v, eff: e }); setPendScene(ch.nextScene); setShowVocab(true)
+      } else {
+        const h = [...hist, ch.nextScene]; setHist(h); goTo(ch.nextScene); saveNow(selStory!.id, selChar!.id, ch.nextScene, h, stats)
+      }
+      setPendingChoiceAfterQuiz(null)
+    }
+  }, [pendingChoiceAfterQuiz, hist, stats, selStory, selChar, applyFx, goTo, saveNow, notif])
+
+  useEffect(() => { gameAudio.startAmbience('calm') }, [])
 
   const back = useCallback(() => { if (hist.length > 1) { const h = hist.slice(0, -1); setHist(h); goTo(h[h.length - 1]) } }, [hist, goTo])
 
@@ -447,6 +528,18 @@ export default function InteractiveNovel({ onBack }: Props) {
         <Sparkles_BG />
         <div className="max-w-lg mx-auto p-4 relative z-10 pb-48">
           {showVocab && <VocabPopup vocab={vData.vocab} eff={vData.eff} onClose={confirmV} />}
+          {showQuiz && quizData && <Quiz quiz={quizData} onComplete={handleQuizComplete} />}
+          {showVocabBook && <VocabularyBook words={learnedWords} onClose={() => setShowVocabBook(false)} />}
+
+          {/* Notifications */}
+          <div className="fixed top-4 right-4 z-50 space-y-2 pointer-events-none">
+            {notifications.map(n => (
+              <div key={n.id} className="notification-slide chrome-frame px-4 py-2 flex items-center gap-2 shadow-lg pointer-events-auto">
+                <span className="text-sm">{n.icon}</span>
+                <span className="text-amber-300 text-xs font-bold">{n.text}</span>
+              </div>
+            ))}
+          </div>
 
           {/* ═══ TOP: Chrome Metal Frame (Glass Dome + Weather + Mood) ═══ */}
           <div className={cn('chrome-frame p-0 overflow-hidden relative mb-4 transition-opacity duration-200', trans ? 'opacity-0' : 'opacity-100')} style={{ background: bg }}>
@@ -476,6 +569,18 @@ export default function InteractiveNovel({ onBack }: Props) {
             {/* Mood Badge — top right */}
             <div className="mood-badge absolute top-3 right-3 px-3 py-1 rounded-full text-[11px] font-bold backdrop-blur-sm">
               {m.l}
+            </div>
+
+            {/* Controls — top left */}
+            <div className="absolute top-3 left-4 flex items-center gap-2 z-10">
+              <button onClick={() => { gameAudio.playSfx('click'); onBack() }} className="text-[#C5A55A]/40 hover:text-[#C5A55A] transition-colors"><ArrowLeft size={16} /></button>
+              <button onClick={() => { gameAudio.playSfx('click'); const m2 = gameAudio.toggleMute(); setMuted(m2) }} className="text-[#C5A55A]/40 hover:text-[#C5A55A] transition-colors" title={muted ? 'Unmute' : 'Mute'}>
+                {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
+              <button onClick={() => { gameAudio.playSfx('click'); setShowVocabBook(true) }} className="text-[#C5A55A]/40 hover:text-[#C5A55A] transition-colors relative" title="Vocabulary Book">
+                <BookMarked size={16} />
+                {learnedWords.length > 0 && <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-amber-500 text-[8px] text-black font-bold rounded-full flex items-center justify-center">{learnedWords.length}</span>}
+              </button>
             </div>
 
             {/* Timer pills — bottom right */}
