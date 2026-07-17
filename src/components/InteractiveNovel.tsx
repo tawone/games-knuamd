@@ -445,22 +445,90 @@ export default function InteractiveNovel({ onBack }: Props) {
     return (
       <div className="novel-bg">
         <Sparkles_BG />
-        <div className="max-w-lg mx-auto p-4 relative z-10">
+        <div className="max-w-lg mx-auto p-4 relative z-10 pb-48">
           {showVocab && <VocabPopup vocab={vData.vocab} eff={vData.eff} onClose={confirmV} />}
 
-          {/* ─── Header ─── */}
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={hist.length > 1 ? back : goMenu} className="text-[#C5A55A]/40 hover:text-[#C5A55A] flex items-center gap-1 text-sm transition-colors"><ArrowLeft size={16} /> {hist.length > 1 ? 'กลับ' : 'ออก'}</button>
-            <div className="flex items-center gap-2">
+          {/* ═══ TOP: Chrome Metal Frame (Glass Dome + Weather + Mood) ═══ */}
+          <div className={cn('chrome-frame p-0 overflow-hidden relative mb-4 transition-opacity duration-200', trans ? 'opacity-0' : 'opacity-100')} style={{ background: bg }}>
+            {/* Inner sparkles */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {Array.from({ length: 10 }, (_, i) => (
+                <div key={i} className="sparkle sparkle-gold" style={{
+                  left: `${10 + Math.random() * 80}%`, bottom: `${Math.random() * 40}%`,
+                  width: `${2 + Math.random() * 3}px`, height: `${2 + Math.random() * 3}px`,
+                  animation: `sparkle-up ${4 + Math.random() * 4}s linear ${Math.random() * 3}s infinite`,
+                }} />
+              ))}
+            </div>
+
+            {/* Glass dome character — left side */}
+            <div className="absolute bottom-4 left-5">
+              <GlassDome emoji={ce(selChar.id)} moodEmoji={m.e} image={img} />
+            </div>
+
+            {/* Illustration icon — center right */}
+            <div className="flex items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #f39c12, #e67e22, #e74c3c)' }}>
+                <span className="text-4xl">{sc.illustration || '🌙'}</span>
+              </div>
+            </div>
+
+            {/* Mood Badge — top right */}
+            <div className="mood-badge absolute top-3 right-3 px-3 py-1 rounded-full text-[11px] font-bold backdrop-blur-sm">
+              {m.l}
+            </div>
+
+            {/* Timer pills — bottom right */}
+            <div className="absolute bottom-3 right-4 flex items-center gap-2">
               <span className="timer-pill text-[10px] text-[#C5A55A]/40 font-mono px-2 py-1 rounded-full">⏱ {fmt(now - gStart)}</span>
               <span className="timer-pill-active text-[10px] gold-text font-mono px-2 py-1 rounded-full">🔀 {fmt(now - cStart)}</span>
               <span className="text-[10px] text-[#C5A55A]/30">{ch}/{selStory.totalScenes}</span>
             </div>
           </div>
 
-          {/* ─── Goal ─── */}
+          {/* ═══ MIDDLE: Parchment Text ═══ */}
+          {sc.title && (
+            <div className="chapter-divider mt-2 mb-2">
+              <span className="gold-text-bright font-bold text-[15px] whitespace-nowrap" style={{ fontFamily: 'Georgia, serif' }}>§ {sc.title}</span>
+            </div>
+          )}
+
+          <div className="parchment p-5 mb-1">
+            <div className="parchment-edge-top" />
+            {renderText(sc.contentTH, sc.content)}
+          </div>
+
+          <p className="text-[11px] text-[#40e0d0]/60 text-center my-3" style={{ fontFamily: 'Georgia, serif', textShadow: '0 0 8px rgba(64,224,208,0.3)' }}>เลือกทางของคุณ</p>
+
+          {/* ─── Choice Buttons ─── */}
+          {sc.choices && sc.choices.length > 0 && (
+            <div className="space-y-3 mb-4">
+              {sc.choices.map((ch2, i) => (
+                <button key={i} onClick={() => pick(ch2)} className="choice-btn w-full text-left p-4 group">
+                  <div className="flex items-start gap-3 relative z-10">
+                    <span className="gold-text font-bold text-sm w-5 shrink-0 pt-0.5" style={{ fontFamily: 'Georgia, serif' }}>{labels[i]}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[#C5A55A] text-sm font-medium">{ch2.text}</div>
+                      <div className="text-[#C5A55A]/40 text-xs mt-0.5">— {ch2.textTH}</div>
+                    </div>
+                    <ChevronRight size={16} className="text-[#C5A55A]/25 group-hover:text-[#C5A55A] shrink-0 mt-1 transition-colors" />
+                  </div>
+                  {ch2.vocabulary && ch2.vocabulary.length > 0 && (
+                    <div className="flex gap-1 mt-2 ml-8 relative z-10">
+                      <span className="text-[10px] bg-[#3498db]/20 text-[#5dade2] px-2 py-0.5 rounded-full border border-[#3498db]/30 flex items-center gap-1"><BookOpen size={10} /> {ch2.vocabulary.length} คำ</span>
+                      {ch2.statEffect && Object.keys(ch2.statEffect).length > 0 && (
+                        <span className="text-[10px] bg-[#2ecc71]/20 text-[#58d68d] px-2 py-0.5 rounded-full border border-[#2ecc71]/30 flex items-center gap-1"><Sparkles size={10} /> stats</span>
+                      )}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Goal progress */}
           {selStory.goal && (
-            <div className="chrome-frame p-3 mb-3">
+            <div className="chrome-frame p-3 mb-4">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] text-[#C5A55A]/50 flex items-center gap-1">{selStory.goal.icon} {selStory.goal.titleTH}</span>
                 <span className="text-[10px] gold-text font-bold">{gVisited.size}/{selStory.goal.steps.length}</span>
@@ -476,90 +544,11 @@ export default function InteractiveNovel({ onBack }: Props) {
             </div>
           )}
 
-          <div className="flex gap-4">
-            <div className="flex-1 min-w-0" ref={ref}>
-
-              {/* ─── Chrome Scene Frame ─── */}
-              <div className={cn('chrome-frame h-52 flex items-center justify-center relative transition-opacity duration-200', trans ? 'opacity-0' : 'opacity-100')} style={{ background: bg }}>
-                {/* Inner sparkles */}
-                <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                  {Array.from({ length: 8 }, (_, i) => (
-                    <div key={i} className="sparkle sparkle-gold" style={{
-                      left: `${10 + Math.random() * 80}%`, bottom: `${Math.random() * 30}%`,
-                      width: `${2 + Math.random() * 3}px`, height: `${2 + Math.random() * 3}px`,
-                      animation: `sparkle-up ${4 + Math.random() * 4}s linear ${Math.random() * 3}s infinite`,
-                    }} />
-                  ))}
-                </div>
-
-                {/* Glass dome character */}
-                <div className="absolute bottom-3 left-4">
-                  <GlassDome emoji={ce(selChar.id)} moodEmoji={m.e} image={img} />
-                </div>
-
-                {/* Illustration */}
-                <div className="w-16 h-16 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f39c12, #e67e22, #e74c3c)' }}>
-                  <span className="text-4xl">{sc.illustration || '🌙'}</span>
-                </div>
-
-                {/* Mood Badge */}
-                <div className="mood-badge absolute top-3 right-3 px-3 py-1 rounded-full text-[11px] font-bold backdrop-blur-sm">
-                  {m.l}
-                </div>
-              </div>
-
-              {/* ─── Chapter Title ─── */}
-              {sc.title && (
-                <div className="chapter-divider mt-4 mb-2">
-                  <span className="gold-text-bright font-bold text-[15px] whitespace-nowrap" style={{ fontFamily: 'Georgia, serif' }}>§ {sc.title}</span>
-                </div>
-              )}
-
-              {/* ─── Parchment Text ─── */}
-              <div className="parchment p-5 mb-1">
-                <div className="parchment-edge-top" />
-                {renderText(sc.contentTH, sc.content)}
-              </div>
-
-              {/* ─── "เลือกทางของคุณ" ─── */}
-              <p className="text-[11px] text-[#40e0d0]/60 text-center my-3" style={{ fontFamily: 'Georgia, serif', textShadow: '0 0 8px rgba(64,224,208,0.3)' }}>เลือกทางของคุณ</p>
-
-              {/* ─── Choice Buttons ─── */}
-              {sc.choices && sc.choices.length > 0 && (
-                <div className="space-y-3 mb-4">
-                  {sc.choices.map((ch2, i) => (
-                    <button key={i} onClick={() => pick(ch2)} className="choice-btn w-full text-left p-4 group">
-                      <div className="flex items-start gap-3 relative z-10">
-                        <span className="gold-text font-bold text-sm w-5 shrink-0 pt-0.5" style={{ fontFamily: 'Georgia, serif' }}>{labels[i]}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[#C5A55A] text-sm font-medium">{ch2.text}</div>
-                          <div className="text-[#C5A55A]/40 text-xs mt-0.5">— {ch2.textTH}</div>
-                        </div>
-                        <ChevronRight size={16} className="text-[#C5A55A]/25 group-hover:text-[#C5A55A] shrink-0 mt-1 transition-colors" />
-                      </div>
-                      {ch2.vocabulary && ch2.vocabulary.length > 0 && (
-                        <div className="flex gap-1 mt-2 ml-8 relative z-10">
-                          <span className="text-[10px] bg-[#3498db]/20 text-[#5dade2] px-2 py-0.5 rounded-full border border-[#3498db]/30 flex items-center gap-1"><BookOpen size={10} /> {ch2.vocabulary.length} คำ</span>
-                          {ch2.statEffect && Object.keys(ch2.statEffect).length > 0 && (
-                            <span className="text-[10px] bg-[#2ecc71]/20 text-[#58d68d] px-2 py-0.5 rounded-full border border-[#2ecc71]/30 flex items-center gap-1"><Sparkles size={10} /> stats</span>
-                          )}
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
+          {/* ═══ BOTTOM: Wood Panel (Character + Stats) — Full Width ═══ */}
+          <div className="fixed bottom-0 left-0 right-0 z-40">
+            <div className="max-w-lg mx-auto" style={{ background: 'linear-gradient(180deg, transparent, rgba(30,25,18,0.95) 20%, rgba(30,25,18,1) 100%)', padding: '16px 16px 12px' }}>
+              <WoodPanel stats={stats} cid={selChar.id} img={img} />
             </div>
-
-            {/* ─── Sidebar Panel ─── */}
-            <div className="w-44 shrink-0 hidden sm:block">
-              <div className="sticky top-4"><WoodPanel stats={stats} cid={selChar.id} img={img} /></div>
-            </div>
-          </div>
-
-          {/* ─── Mobile Bottom ─── */}
-          <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 z-40" style={{ background: 'linear-gradient(180deg, transparent, rgba(30,25,18,0.98) 30%)' }}>
-            <div className="max-w-lg mx-auto pt-4"><WoodPanel stats={stats} cid={selChar.id} img={img} compact /></div>
           </div>
         </div>
       </div>
