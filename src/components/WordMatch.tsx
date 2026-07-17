@@ -137,7 +137,7 @@ export default function WordMatch({ onBack }: Props) {
 
   if (!selectedCategory) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#1B3A5C] via-[#234B6E] to-[#2E8B8B] p-4">
         <div className="max-w-lg mx-auto">
           <button onClick={onBack} className="text-white/80 hover:text-white flex items-center gap-1 mb-6 text-sm">
             <ArrowLeft size={16} /> กลับ
@@ -165,7 +165,7 @@ export default function WordMatch({ onBack }: Props) {
   if (gameOver) {
     const accuracy = totalQuestions > 0 ? Math.round((matched.size / totalQuestions) * 100) : 0
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#1B3A5C] via-[#234B6E] to-[#2E8B8B] p-4">
         <div className="max-w-lg mx-auto text-center">
           <Card className="p-8 bg-white/95 backdrop-blur">
             <div className="text-5xl mb-4">🏆</div>
@@ -205,7 +205,7 @@ export default function WordMatch({ onBack }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#1B3A5C] via-[#234B6E] to-[#2E8B8B] p-4">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-4">
           <button onClick={() => setSelectedCategory(null)} className="text-white/80 hover:text-white flex items-center gap-1 text-sm">

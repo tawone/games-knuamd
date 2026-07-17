@@ -107,7 +107,7 @@ export default function FillBlank({ onBack }: Props) {
 
   if (!selectedCategory) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#C5A55A] via-[#8B7340] to-[#1B3A5C] p-4">
         <div className="max-w-lg mx-auto">
           <button onClick={onBack} className="text-white/80 hover:text-white flex items-center gap-1 mb-6 text-sm">
             <ArrowLeft size={16} /> กลับ
@@ -137,7 +137,7 @@ export default function FillBlank({ onBack }: Props) {
   if (isGameOver) {
     const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-4">
+      <div className="min-h-screen bg-gradient-to-br from-[#C5A55A] via-[#8B7340] to-[#1B3A5C] p-4">
         <div className="max-w-lg mx-auto text-center">
           <Card className="p-8 bg-white/95 backdrop-blur">
             <div className="text-5xl mb-4">🌟</div>
@@ -179,7 +179,7 @@ export default function FillBlank({ onBack }: Props) {
   const q = questions[currentQ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-500 via-orange-500 to-red-500 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#C5A55A] via-[#8B7340] to-[#1B3A5C] p-4">
       <div className="max-w-lg mx-auto">
         <div className="flex items-center justify-between mb-4">
           <button onClick={() => setSelectedCategory(null)} className="text-white/80 hover:text-white flex items-center gap-1 text-sm">
